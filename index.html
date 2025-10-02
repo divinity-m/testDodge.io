@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" class="no-cursor">
+    <head>
+        <title>Dodge.io</title>
+        <link rel="icon" type="image/x-icon" href="DodgeImages/dodgeIcon.png" />
+
+        <script defer src="functions.js"></script>
+        <script defer src="music.js"></script>
+        <script defer src="script.js"></script>
+
+        <!-- CSS -->
+        <style>
+            html, body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                overflow: hidden; /* blocks scrolling */
+            }
+            body {
+                background-color: rgb(255, 255, 255);
+                text-align: center;
+                font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+            }
+            #game {
+                width: 800;
+                height: 650;
+                margin: 5px auto;
+                pointer-events: none;
+            }
+            .no-cursor html,
+            .no-cursor body,
+            .no-cursor * {
+                cursor: none !important;
+            }
+            h1 {
+                margin-bottom: 0.25rem;
+                margin-top: 0.25rem;
+            }
+            p {
+                font-weight: bold;
+            }
+            #evades {
+                color: #8ED5FF;
+            }
+            #evades:hover {
+                color: #B8E4FF;
+            }
+            #jsab {
+                color: #FF2F7A;
+            }
+            #jsab:hover {
+                color: #FF77A8;
+            }
+            #cursor, #cursor-overlay {
+                position: absolute;
+                pointer-events: none;
+                top: -20px;
+                left: -20px;
+                width: 12px;
+                height: 12px;
+                border-radius: 100%;
+                border-style: solid;
+                border-width: 3px;
+                background-color: rgb(255, 255, 255);
+                border-color: rgb(230, 230, 230);
+            }
+            .trail, .click {
+                position: absolute;
+                pointer-events: none;
+                top: -20px;
+                left: -20px;
+                border-radius: 100%;
+            }
+        </style>
+    </head>
+    <body id="bodyEl">        
+        <div style="display: none;">
+            <!-- Images -->
+            <img id="gear-filled" src="DodgeImages/gear-filled.png">
+            <img id="gear-unfilled" src="DodgeImages/gear-unfilled.png">
+
+            <!-- Audio -->
+            <audio id="alarm9" src="Audio/Alarm 9 - Blue Cxve.mp3" preload="metadata"></audio>
+            <audio id="a-new-start" src="Audio/A New Start - Thygan Buch.mp3" preload="metadata"></audio>
+            <audio id="interstellar" src="Audio/interstellar - pandora., chillwithme, & cødy.mp3" preload="metadata"></audio>
+            <audio id="astral-projection" src="Audio/Astral Projection - Hallmore.mp3" preload="metadata"></audio>
+            <audio id="divine" src="Audio/Divine - SOTAREKO.mp3" preload="metadata"></audio>
+            <audio id="sharp-pop" src="Audio/sharp-pop.mp3" preload="metadata"></audio>
+        </div>
+
+        <!-- Title & Description -->
+        <h1>Dodge.io</h1>
+        <p>
+            Inspired by <a id="evades" href="https://www.evades.io" target="_blank">Evades.io</a> and 
+            <a id="jsab" href="https://www.justshapesandbeats.com/" target="_blank">Just Shapes & Beats</a>
+        </p>
+
+        <!-- Canvas -->
+        <canvas id="game"></canvas>
+        <div id="cursor-trail"></div>
+        <div id="cursor"></div>
+        <div id="cursor-overlay"></div>
+        <div id="cursor-clicks"></div>
+    </body>
+</html>
