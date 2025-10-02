@@ -686,9 +686,9 @@ function drawStartScreen() {
         ctx.fillText("MENU", BgBottomX, 103);
         ctx.restore();
 
-        if (BgTopX <= hyp*4/10) BgTopX += 10 * Math.max(0.5, (2 - (now - BgTime)/1000));
+        if (BgTopX <= hyp*4/10) BgTopX += 10 * Math.max(0.1, (1.5 - (now - BgTime)/1000));
         
-        if (BgBottomX >= hyp*6/10 && now - BgTime > 1000) BgBottomX -= 10 * Math.max(0.5, (3 - (now - BgTime)/1000));
+        if (BgBottomX >= hyp*6/10 && now - BgTime > 1250) BgBottomX -= 10 * Math.max(0.1, (2.75 - (now - BgTime)/1000));
         
         // Me
         ctx.strokeStyle = player.color;
