@@ -662,41 +662,49 @@ function createClick(button) {
 }
 
 function drawStartScreen() {
-    if (innerGameState === "mainMenu" || innerGameState === "selectDifficulty") {
-        // Main Menu Background Animation
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "rgb(170, 170, 170)";
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(GAME_WIDTH, GAME_HEIGHT);
-        ctx.stroke();
+    // line across the screen
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgb(170, 170, 170)";
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(GAME_WIDTH, GAME_HEIGHT);
+    ctx.stroke();
 
-        ctx.fillStyle = "rgb(170, 170, 170)";
-        ctx.font = '150px Arial';
-        ctx.textAlign = 'center';
+    ctx.fillStyle = "rgb(170, 170, 170)";
+    ctx.font = '150px Arial';
+    ctx.textAlign = 'center';
 
-        let hyp = Math.hypot(GAME_WIDTH, GAME_HEIGHT);
-        ctx.save();
-        ctx.rotate(Math.atan(GAME_HEIGHT/GAME_WIDTH));
-        ctx.fillText("MAIN", BgTopX, 0);
-        ctx.restore();
-        
-        ctx.save();
-        ctx.rotate(Math.atan(GAME_HEIGHT/GAME_WIDTH));
-        ctx.fillText("MENU", BgBottomX, 103);
-        ctx.restore();
+    // Main Menu Background Animation
+    // top text
+    ctx.save();
+    ctx.rotate(Math.atan(GAME_HEIGHT/GAME_WIDTH)); // calculates the angle to rotate the text with inverse tan(opp/adj)
+    ctx.fillText(bgTopText, bgTopX, 0);
+    ctx.restore();
 
-        if (BgTopX <= hyp*4/10) BgTopX += 10 * Math.max(0.1, (1.5 - (now - BgTime)/1000));
-        
-        if (BgBottomX >= hyp*6/10 && now - BgTime > 1250) BgBottomX -= 10 * Math.max(0.1, (2.75 - (now - BgTime)/1000));
-        
-        // Me
+    // bottom text
+    ctx.save();
+    ctx.rotate(Math.atan(GAME_HEIGHT/GAME_WIDTH));
+    ctx.fillText(bgBottomText, bgBottomX, 103);
+    ctx.restore();
+
+    // movement for the top and bottom text
+    // calculates the distance between the destination and the current X value, then divides it by the current X value
+    let dBgTop = Math.max(0.01, 100 * ((bgTopMax - bgTopX) / bgTopMax));
+    let dBgBottom = Math.min(-0.01, 100 * ((bgBottomMax - bgBottomX) / bgBottomMax));
+
+    if (bgTopX <= bgTopMax) bgTopX += dBgTop;
+    if (bgBottomX >= bgBottomMax && bgTopX >= bgTopMax - 30) bgBottomX += dBgBottom;
+
+    // Me
+    if (innerGameState === "mainMenu") {
         ctx.strokeStyle = player.color;
         ctx.lineWidth = 1.5;
         ctx.font = '30px Roboto';
         ctx.textAlign = 'left';
         ctx.strokeText("Vasto", 5, 30);
-        
+    }
+    // Buttons
+    if (innerGameState === "mainMenu" || innerGameState === "selectDifficulty") {
         // PLAY BUTTON //
         const playBtn = {
             x: 250,
