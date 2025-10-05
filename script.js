@@ -3,7 +3,8 @@ const cnv = document.getElementById("game");
 const ctx = cnv.getContext('2d');
 
 // game units
-const GAME_WIDTH = cnv.width, GAME_HEIGHT = cnv.height;
+let GAME_WIDTH = cnv.width, GAME_HEIGHT = cnv.height;
+window.addEventListener('resize', (e) => { [GAME_WIDTH, GAME_HEIGHT] = [cnv.width, cnv.height]; });
 let gameState = "loading", innerGameState = "loading";
 
 let bgTopText, bgBottomText, bgTopX, bgBottomX, bgTopMax, bgBottomMax;
