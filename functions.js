@@ -149,9 +149,9 @@ function recordLeftClick() {
             music.var.currentTime = 0;
             music.promise = music.var.play();
         }
-        resetBgVars();
         gameState = "startScreen";
         innerGameState = "mainMenu";
+        resetBgVars();
         mouseMovementOn = previousMM;
     }
 
@@ -662,7 +662,7 @@ function createClick(button) {
 }
 
 function drawStartScreen() {
-    // line across the screen
+    // Line across the screen
     ctx.lineWidth = 2;
     ctx.strokeStyle = "rgb(170, 170, 170)";
     ctx.beginPath();
@@ -670,14 +670,14 @@ function drawStartScreen() {
     ctx.lineTo(GAME_WIDTH, GAME_HEIGHT);
     ctx.stroke();
 
+    // Main Menu Background Animation
     ctx.fillStyle = "rgb(170, 170, 170)";
     ctx.font = '150px Arial';
     ctx.textAlign = 'center';
 
-    // Main Menu Background Animation
     // top text
     ctx.save();
-    ctx.rotate(Math.atan(GAME_HEIGHT/GAME_WIDTH)); // calculates the angle to rotate the text with inverse tan(opp/adj)
+    ctx.rotate(Math.atan(GAME_HEIGHT/GAME_WIDTH));
     ctx.fillText(bgTopText, bgTopX, 0);
     ctx.restore();
 
@@ -687,23 +687,22 @@ function drawStartScreen() {
     ctx.fillText(bgBottomText, bgBottomX, 103);
     ctx.restore();
 
-    // movement for the top and bottom text
-    // calculates the distance between the destination and the current X value, then divides it by the current X value
-    let dBgTop = Math.max(0.01, 100 * ((bgTopMax - bgTopX) / bgTopMax));
-    let dBgBottom = Math.min(-0.01, 100 * ((bgBottomMax - bgBottomX) / bgBottomMax));
+    // Subtracs the current X from the destination, then divides that number by the destination and multiplies it by 100
+    let dBgTopX = 75 * Math.max(0.001, (bgTopMax - bgTopX) / bgTopMax);
+    let dBgBottomX = 75 * Math.min(-0.001, (bgBottomMax - bgBottomX) / bgBottomMax);
+    
+    if (bgTopX <= bgTopMax) bgTopX += dBgTopX;
+    if (bgBottomX >= bgBottomMax && bgTopX >= bgTopMax - 25) bgBottomX += dBgBottomX;
 
-    if (bgTopX <= bgTopMax) bgTopX += dBgTop;
-    if (bgBottomX >= bgBottomMax && bgTopX >= bgTopMax - 30) bgBottomX += dBgBottom;
-
-    // Me
     if (innerGameState === "mainMenu") {
+        // Me
         ctx.strokeStyle = player.color;
         ctx.lineWidth = 1.5;
         ctx.font = '30px Roboto';
         ctx.textAlign = 'left';
         ctx.strokeText("Vasto", 5, 30);
     }
-    // Buttons
+
     if (innerGameState === "mainMenu" || innerGameState === "selectDifficulty") {
         // PLAY BUTTON //
         const playBtn = {
