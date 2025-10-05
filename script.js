@@ -3,8 +3,15 @@ const cnv = document.getElementById("game");
 const ctx = cnv.getContext('2d');
 
 // game units
-let GAME_WIDTH = cnv.width, GAME_HEIGHT = cnv.height;
-window.addEventListener('resize', (e) => { [GAME_WIDTH, GAME_HEIGHT] = [cnv.width, cnv.height]; });
+let GAME_WIDTH , GAME_HEIGHT;
+function resizeCnv() {
+    cnv.width = 800/window.innerWidth * window.innerWidth;
+    cnv.height = 650/window.innerHeight * window.innerHeight;
+    [GAME_WIDTH, GAME_HEIGHT] = [cnv.width, cnv.height];
+}
+window.addEventListener('resize', resizeCnv);
+resizeCnv();
+
 let gameState = "loading", innerGameState = "loading";
 
 let bgTopText, bgBottomText, bgTopX, bgBottomX, bgTopMax, bgBottomMax;
