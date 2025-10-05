@@ -3,21 +3,34 @@ const cnv = document.getElementById("game");
 const ctx = cnv.getContext('2d');
 
 // game units
-const GAME_WIDTH = 800;
-const GAME_HEIGHT = 650;
-cnv.width = GAME_WIDTH;
-cnv.height = GAME_HEIGHT;
+const GAME_WIDTH = 800, GAME_HEIGHT = 650;
+[cnv.width, cnv.height] = [GAME_WIDTH, GAME_HEIGHT];
 
-let gameState = "loading";
-let innerGameState = "loading";
+let gameState = "loading", innerGameState = "loading";
 
-let BgTopX;
-let BgBottomX;
-let BgTime;
+let bgTopText, bgBottomText, bgTopX, bgBottomX, bgTopMax, bgBottomMax;
 function resetBgVars() {
-    BgTopX = -500;
-    BgBottomX = GAME_WIDTH+500;
-    BgTime = Date.now();
+    const hyp = Math.hypot(GAME_WIDTH, GAME_HEIGHT);
+    if (innerGameState === "mainMenu") {
+        [bgTopText, bgBottomText] = ["MAIN", "MENU"];
+        [bgTopX, bgBottomX] = [-500, GAME_WIDTH+500];
+        [bgTopMax, bgBottomMax] = [hyp*4/10, hyp*6/10];
+    }
+    if (innerGameState === "selectDifficulty") {
+        [bgTopText, bgBottomText] = ["LEVEL", "SELECTION"];
+        [bgTopX, bgBottomX] = [-625, GAME_WIDTH+1125];
+        [bgTopMax, bgBottomMax] = [hyp*5/10, hyp*4.75/10];
+    }
+    if (innerGameState === "selectDodger") {
+        [bgTopText, bgBottomText] = ["DODGER", "SELECTION"];
+        [bgTopX, bgBottomX] = [-750, GAME_WIDTH+1125];
+        [bgTopMax, bgBottomMax] = [hyp*5/10, hyp*4.75/10];
+    }
+    if (innerGameState === "settings") {
+        [bgTopText, bgBottomText] = ["GAME", "SETTINGS"];
+        [bgTopX, bgBottomX] = [-500, GAME_WIDTH+1000];
+        [bgTopMax, bgBottomMax] = [hyp*5/10, hyp*5/10];
+    }
 }
 
 // TouchScreen Events
@@ -70,11 +83,8 @@ let mouseOver = {
     aZ_RangeBtn: false, aZ_AvSlider: false, customCursorBtn: false, cursorTrailSlider: false,
 };
 
-let mouseX;
-let mouseY;
+let mouseX, mouseY, cursorX, cursorY;
 let track = false;
-let cursorX;
-let cursorY;
 let allCursors = [];
 let lastCursorTrail = 0;
 let trailDensity = 0;
@@ -147,52 +157,32 @@ let amplify = {
     },
 }
 
-let allEnemies = [];
-let allDangers = [];
+let allEnemies = [], allDangers = [];
 
 // Time, Highscore, and Difficulty
 let now = Date.now();
 let clickEventSave = 0;
 
-let loadingGame = Date.now();
-let loadingTextChange = Date.now();
+let loadingGame = Date.now(), loadingTextChange = Date.now();
 let LI = 0; // loading index
 let endLoading = false;
 
-let startTime = Date.now();
-let currentTime = ((now-startTime) / 1000).toFixed(2);
-let timeLeft;
+let startTime = Date.now(), currentTime = ((now-startTime) / 1000).toFixed(2), timeLeft;
 
-let enemySpawnPeriod = 3000;
-let lastSpawn = Date.now();
+let enemySpawnPeriod = 3000, lastSpawn = Date.now();
 
 let highscoreColor = "rgb(87, 87, 87)";
-let highscore = {
-    easy: 0,
-    medium: 0,
-    hard: 0,
-    limbo: 0,
-    andromeda: 0,
-    euphoria: 0,
-};
-let difficulty = {
-    level: "easy",
-    color: "rgb(0, 225, 255)",
-};
+let highscore = { easy: 0, medium: 0, hard: 0, limbo: 0, andromeda: 0, euphoria: 0, };
+let difficulty = { level: "easy", color: "rgb(0, 225, 255)", };
 
 // Music
-let musicVolume = 0;
-let sfxVolume = 0;
+let musicVolume = 0, sfxVolume = 0;
 
 let alarm9 = document.getElementById("alarm9");
 let music = {
-    var: alarm9,
-    name: "Alarm 9",
-    artist: "Blue Cxve",
-    color: "rgb(163, 0, 163)",
-    subColor: "rgb(173, 0, 173)",
-    timestamps: [],
-    promise: "alarm9.play()",
+    var: alarm9, name: "Alarm 9", artist: "Blue Cxve",
+    color: "rgb(163, 0, 163)", subColor: "rgb(173, 0, 173)",
+    timestamps: [], promise: "alarm9.play()",
 }
 let aNewStart = document.getElementById("a-new-start");
 let interstellar = document.getElementById("interstellar");
