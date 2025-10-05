@@ -3,7 +3,7 @@ const cnv = document.getElementById("game");
 const ctx = cnv.getContext('2d');
 
 // game units
-const GAME_WIDTH = 800, GAME_HEIGHT = 650;
+const GAME_WIDTH = cnv.width, GAME_HEIGHT = cnv.height;
 let gameState = "loading", innerGameState = "loading";
 
 let bgTopText, bgBottomText, bgTopX, bgBottomX, bgTopMax, bgBottomMax;
