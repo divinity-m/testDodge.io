@@ -20,8 +20,13 @@ function resetBgVars() {
     BgTime = Date.now();
 }
 
-// Keyboard Events
+// TouchScreen Events
 let inputType = "kbm";
+document.addEventListener("touchstart", () => {mouseDown = true; inputType = "touch"; recordLeftClick();});
+document.addEventListener("touchend", () => {mouseDown = false});
+document.addEventListener("touchcancel", () => {mouseDown = false});
+
+// Keyboard Events
 let lastPressing = "mouse";
 let keyboardMovementOn = false;
 let wPressed = false;
@@ -39,24 +44,19 @@ let mouseMovementOn = false;
 let previousMM = false;
 document.addEventListener("mousedown", () => {mouseDown = true});
 document.addEventListener("mouseup", () => {mouseDown = false});
-document.addEventListener("click", () => { recordLeftClick(); allClicks.push(createClick("left")); });
+document.addEventListener("click", () => {
+    if (inputType === "kbm") { recordLeftClick(); allClicks.push(createClick("left")); }
+});
 document.addEventListener("contextmenu", (event) => {
     event.preventDefault();
-    recordRightClick(event);
-    allClicks.push(createClick("right"));
+    if (inputType === "kbm") { recordRightClick(event); allClicks.push(createClick("right")); }
 });
 document.addEventListener("auxclick", (event) => {
     if (event.button === 1) {
         event.preventDefault();
-        recordMiddleClick(event);
-        allClicks.push(createClick("middle"));
+        if (inputType === "kbm") {  recordMiddleClick(event); allClicks.push(createClick("middle")); }
     }
 });
-
-// TouchScreen Events
-document.addEventListener("touchstart", () => {mouseDown = true; recordLeftClick(); inputType = "touch";});
-document.addEventListener("touchend", () => {mouseDown = false});
-document.addEventListener("touchcancel", () => {mouseDown = false});
 
 // Input Tracking
 let mouseOver = {
