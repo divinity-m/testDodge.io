@@ -2,48 +2,44 @@
 const cnv = document.getElementById("game");
 const ctx = cnv.getContext('2d');
 
-// game units
+// Game Units
+let gameState = "loading", innerGameState = "loading";
 let GAME_WIDTH , GAME_HEIGHT;
-function resizeCnv() {
-    cnv.width = 800/window.innerWidth * window.innerWidth;
-    cnv.height = 650/window.innerHeight * window.innerHeight;
+
+// Screen Orientations
+function resizeCnv(type) { console.log("window rotation accomodation"); // comment
+    if (!isMobile()) { // aspect ratio of 16:13
+        cnv.width = 800/window.innerWidth * window.innerWidth;
+        cnv.height = 650/window.innerHeight * window.innerHeight;
+    } else {
+        if (type === "landscape") {
+            cnv.width = 650/window.innerWidth * window.innerWidth;
+            cnv.height = 800/window.innerHeight * window.innerHeight;
+        } else if (type === "portrait") {
+            cnv.width = 800/window.innerWidth * window.innerWidth;
+            cnv.height = 650/window.innerHeight * window.innerHeight;
+        }
+    }
     [GAME_WIDTH, GAME_HEIGHT] = [cnv.width, cnv.height];
 }
-window.addEventListener('resize', resizeCnv);
-resizeCnv();
 
-let gameState = "loading", innerGameState = "loading";
+screen?.orientation.addEventListener("change", (e) => {
+    if (e?.target?.type.startsWith("landscape")) resizeCnv("landscape");
+    else if (e?.target?.type.startsWith("portrait")) resizeCnv("portrait");
+});
+if (screen?.orientation?.type.startsWith("portrait")) resizeCnv("portrait");
+else resizeCnv("landscape");
 
-let bgTopText, bgBottomText, bgTopX, bgBottomX, bgTopMax, bgBottomMax;
-function resetBgVars() {
-    const hyp = Math.hypot(GAME_WIDTH, GAME_HEIGHT);
-    if (innerGameState === "mainMenu") {
-        [bgTopText, bgBottomText] = ["MAIN", "MENU"];
-        [bgTopX, bgBottomX] = [-500, GAME_WIDTH+500];
-        [bgTopMax, bgBottomMax] = [hyp*4/10, hyp*6/10];
-    }
-    if (innerGameState === "selectDifficulty") {
-        [bgTopText, bgBottomText] = ["LEVEL", "SELECTION"];
-        [bgTopX, bgBottomX] = [-625, GAME_WIDTH+1125];
-        [bgTopMax, bgBottomMax] = [hyp*5/10, hyp*4.75/10];
-    }
-    if (innerGameState === "selectDodger") {
-        [bgTopText, bgBottomText] = ["DODGER", "SELECTION"];
-        [bgTopX, bgBottomX] = [-750, GAME_WIDTH+1125];
-        [bgTopMax, bgBottomMax] = [hyp*5/10, hyp*4.75/10];
-    }
-    if (innerGameState === "settings") {
-        [bgTopText, bgBottomText] = ["GAME", "SETTINGS"];
-        [bgTopX, bgBottomX] = [-500, GAME_WIDTH+1000];
-        [bgTopMax, bgBottomMax] = [hyp*5/10, hyp*5/10];
-    }
+// Touchscreen Events
+function isMobile() {
+  const uaCheck = /Mobi|Android/i.test(navigator.userAgent);
+  const sizeCheck = window.matchMedia("(max-width: 768px)").matches;
+  return uaCheck || sizeCheck;
 }
 
-// TouchScreen Events
-let inputType = "kbm";
-document.addEventListener("touchstart", () => {mouseDown = true; inputType = "touch"; recordLeftClick();});
-document.addEventListener("touchend", () => {mouseDown = false});
-document.addEventListener("touchcancel", () => {mouseDown = false});
+document.addEventListener("touchstart", () => { if (isMobile()) {mouseDown = true; recordLeftClick();} });
+document.addEventListener("touchend", () => { if (isMobile()) mouseDown = false });
+document.addEventListener("touchcancel", () => { if (isMobile()) mouseDown = false });
 
 // Keyboard Events
 let lastPressing = "mouse";
@@ -61,19 +57,19 @@ let mouseDown = false;
 let allClicks = [];
 let mouseMovementOn = false;
 let previousMM = false;
-document.addEventListener("mousedown", () => {mouseDown = true});
-document.addEventListener("mouseup", () => {mouseDown = false});
+document.addEventListener("mousedown", () => { if (!isMobile()) mouseDown = true });
+document.addEventListener("mouseup", () => { if (!isMobile()) mouseDown = false });
 document.addEventListener("click", () => {
-    if (inputType === "kbm") { recordLeftClick(); allClicks.push(createClick("left")); }
+    if (!isMobile()) { recordLeftClick(); allClicks.push(createClick("left")); }
 });
 document.addEventListener("contextmenu", (event) => {
     event.preventDefault();
-    if (inputType === "kbm") { recordRightClick(event); allClicks.push(createClick("right")); }
+    if (!isMobile()) { recordRightClick(event); allClicks.push(createClick("right")); }
 });
 document.addEventListener("auxclick", (event) => {
     if (event.button === 1) {
         event.preventDefault();
-        if (inputType === "kbm") {  recordMiddleClick(event); allClicks.push(createClick("middle")); }
+        if (!isMobile()) {  recordMiddleClick(event); allClicks.push(createClick("middle")); }
     }
 });
 
@@ -95,7 +91,6 @@ let allCursors = [];
 let lastCursorTrail = 0;
 let trailDensity = 0;
 window.addEventListener('mousemove', (event) => {
-    inputType = "kbm";
     // cursor location
     [cursorX, cursorY] = [event.clientX, event.clientY];
 
@@ -265,6 +260,32 @@ window.addEventListener('beforeunload', () => {
         localStorage.setItem('localUserData', JSON.stringify(userData));
     }
 })
+
+// cool background stuff
+let bgTopText, bgBottomText, bgTopX, bgBottomX, bgTopMax, bgBottomMax;
+function resetBgVars() {
+    const hyp = Math.hypot(GAME_WIDTH, GAME_HEIGHT);
+    if (innerGameState === "mainMenu") {
+        [bgTopText, bgBottomText] = ["MAIN", "MENU"];
+        [bgTopX, bgBottomX] = [-500, GAME_WIDTH+500];
+        [bgTopMax, bgBottomMax] = [hyp*4/10, hyp*6/10];
+    }
+    if (innerGameState === "selectDifficulty") {
+        [bgTopText, bgBottomText] = ["LEVEL", "SELECTION"];
+        [bgTopX, bgBottomX] = [-625, GAME_WIDTH+1125];
+        [bgTopMax, bgBottomMax] = [hyp*5/10, hyp*4.75/10];
+    }
+    if (innerGameState === "selectDodger") {
+        [bgTopText, bgBottomText] = ["DODGER", "SELECTION"];
+        [bgTopX, bgBottomX] = [-750, GAME_WIDTH+1125];
+        [bgTopMax, bgBottomMax] = [hyp*5/10, hyp*4.75/10];
+    }
+    if (innerGameState === "settings") {
+        [bgTopText, bgBottomText] = ["GAME", "SETTINGS"];
+        [bgTopX, bgBottomX] = [-500, GAME_WIDTH+1000];
+        [bgTopMax, bgBottomMax] = [hyp*5/10, hyp*5/10];
+    }
+}
 
 // Drawing the game
 function draw() {
