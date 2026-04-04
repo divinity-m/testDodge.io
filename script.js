@@ -26,7 +26,7 @@ window.addEventListener("resize", resize);
 screen?.orientation.addEventListener("change", resize);
 resize();
 
-// Full Screen Stuff
+/* Full Screen Stuff */
 window.addEventListener("touchstart", () => {
     if (isMobile() && !document.fullscreenElement) {
         document.documentElement.requestFullscreen();
