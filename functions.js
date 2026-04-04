@@ -127,20 +127,24 @@ function recordMiddleClick() {
 function recordLeftClick() {
     lastPressing = "mouse";
 
-    const mouseInAbilityBtn = abilityOneBtn.contains(event.target) || abilityTwoBtn.contains(event.target)
+    const mouseInAbilityBtn = abilityOneBtn.contains(event.target) || abilityTwoBtn.contains(event.target);
     
     if (loadingScreen(true) || mouseInAbilityBtn) return;
     
-    previousMM = false;
+    let previousMM = false;
     
     // Mouse Movement
-    if (mouseMovementOn && !settings.disableMM) {
-        mouseMovementOn = false;
-        previousMM = true;
-    } else if (!mouseMovementOn && !settings.disableMM) {
-        mouseMovementOn = true;
-        previousMM = false;
+    if (!isMobile()) {
+        if (mouseMovementOn && !settings.disableMM) {
+            mouseMovementOn = false;
+            previousMM = true;
+        } else if (!mouseMovementOn && !settings.disableMM) {
+            mouseMovementOn = true;
+            previousMM = false;
+        }
     }
+    // mobile MM stays on for normal screen taps
+    else previousMM = mouseMovementOn;
     
     // Start screen buttons
     if (innerGameState === "mainMenu" && (mouseOver.play || mouseOver.selector)) {
@@ -324,9 +328,6 @@ function recordLeftClick() {
             }
         })
     }
-
-    // Mobile MM stays on
-    if (isMobile()) mouseMovementOn = true;
 }
 
 function detectHover() {
@@ -1354,8 +1355,10 @@ function spawnEnemyPeriodically() {
 
 // PLAYER AND ENEMY MOVEMENT
 function keyboardControls() {
+    const playerExists = player?.x !== undefined && player?.y !== undefined;
+    
     // Moves the player with the keyboard
-    if (keyboardMovementOn && player?.x !== undefined && player?.y !== undefined) {
+    if (keyboardMovementOn && playerExists) {
         lastPressing = "kb";
 
         let dxKB = 0;
@@ -1386,8 +1389,10 @@ function keyboardControls() {
 }
 
 function mouseMovement() {
+    const playerExists = player?.x !== undefined && player?.y !== undefined;
+    
     // Moves the player towards the cursor
-    if (mouseMovementOn && !keyboardMovementOn && player?.x !== undefined && player?.y !== undefined) {
+    if (mouseMovementOn && !keyboardMovementOn && playerExists) {
         lastPressing = "mouse";
         
         const dxMouse = mouseX - player.x;
