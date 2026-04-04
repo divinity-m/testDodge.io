@@ -1,4 +1,4 @@
-console.log("full screen");
+console.log("full screen, resize");
 
 // DODGE.IO - SCRIPT.JS
 const cnv = document.getElementById("game");
