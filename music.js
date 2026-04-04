@@ -10,6 +10,7 @@ function restartMusicMode() {
     dash.lastEnded = 0;
     shockwave.reset();
     amplify.reset();
+    eventHorizon.reset();
     innerGameState = 'inMusicMode';
     gameState = "musicMode";
 }
@@ -79,10 +80,10 @@ function drawEndLevel() {
             ctx.fillText(`Exiting In`, 250, GAME_HEIGHT/2 - 25);
             ctx.fillText(`${Math.ceil(3 - (now-startTime)/1000)}`, 250, GAME_HEIGHT/2 + 25);
             if (now - startTime >= 3000) {
-                resetBgVars();
                 dash.lastEnded = 0;
                 shockwave.reset();
                 amplify.reset();
+                eventHorizon.reset();
                 music.var = aNewStart;
                 music.name = "A New Start";
                 music.artist = "Thygan Buch";
@@ -90,6 +91,7 @@ function drawEndLevel() {
                 music.promise = music.var.play();
                 gameState = "startScreen";
                 innerGameState = "mainMenu";
+                resetBgVars();
             }
         }
         else {
@@ -121,7 +123,7 @@ function createBeam(variant="none") {
         variant: Math.random(),
         x: Math.random() * GAME_WIDTH, y: Math.random() * GAME_HEIGHT,
         w: (Math.random() * 20) + 80, h: (Math.random() * 20) + 50,
-        spawnRate: 0.25, baseSpawnRate: 0.25, despawnRate: 2,
+        spawnRate: 0.25, baseSpawnRate: 0.25, despawnRate: 2, baseDespawnRate: 2,
         colorValue: 185,
         get color() {
             return `rgba(${this.colorValue}, ${this.colorValue}, ${this.colorValue}, 0.95)`;
@@ -150,7 +152,7 @@ function createCircle(variant="none") {
         type: "circle",
         variant: Math.random(),
         x: Math.random() * GAME_WIDTH, y: Math.random() * GAME_HEIGHT, r: (Math.random() * 40) + 80,
-        spawnRate: 0.25, baseSpawnRate: 0.25, despawnRate: 2,
+        spawnRate: 0.25, baseSpawnRate: 0.25, despawnRate: 2, baseDespawnRate: 2,
         colorValue: 185,
         get color() {
             return `rgba(${this.colorValue}, ${this.colorValue}, ${this.colorValue}, 0.95)`;
@@ -182,7 +184,7 @@ function createSpike() {
         x: 0, y: 0, r: 20,
         rotate: 0, 
         baseSpeed: 2.5 + 2 * (music.var.currentTime/music.var.duration),
-        spawnRate: 0.5, baseSpawnRate: 0.5, despawnRate: 2,
+        spawnRate: 0.5, baseSpawnRate: 0.5, despawnRate: 2, baseDespawnRate: 2,
         colorValue: 185,
         get color() {
             return `rgba(${this.colorValue}, ${this.colorValue}, ${this.colorValue}, 0.95)`;
@@ -221,7 +223,7 @@ function createText() {
         variant: "none",
         x: 0, y: 0,
         text: "placeholder", textAlign: "left", font: "50px Verdana",
-        spawnRate: 0.5, baseSpawnRate: 0.5, despawnRate: 2,
+        spawnRate: 0.5, baseSpawnRate: 0.5, despawnRate: 2, baseDespawnRate: 2,
         colorValue: 185,
         get color() {
             return `rgba(${this.colorValue}, ${this.colorValue}, ${this.colorValue}, 0.95)`;
@@ -558,7 +560,7 @@ function musicCollisions() {
             innerGameState = "musicModeFail";
         }
         
-        if (player.dodger === "jötunn" && danger.type !== "text") {
+        if ((player.dodger === "jötunn" || player.dodger === "quasar") && danger.type !== "text") {
             let distance = Math.hypot(player.x-danger.x, player.y-danger.y) - player.r;
             
             // Determines the distance from the edge of the player to the edge of the enemy
@@ -572,24 +574,43 @@ function musicCollisions() {
                 }
             if (danger.type === "spike") distance -= danger.r*1.5;
             if (distance < 0) distance = 0;
-            danger.distance = distance;
-            
-            // limits the lowest possible distance by taking the higher value
-            const maxDist = Math.max(distance, absoluteZero.slowEnd);
-            
-            // limits the highest posible distance by taking the lower value
-            const factor = Math.min(1, (maxDist - absoluteZero.slowEnd) / (absoluteZero.slowStart - absoluteZero.slowEnd));
-            
-            // xFactor = min + max*(factor between 0 and 1)
-            const spawnFactor = 0.8 + 0.2*factor;
-            const slowFactor = 0.3 + 0.7*factor;
-            
-            if (absoluteZero.passive === "Absolute Zero" || absoluteZero.passive === "Stagnation") {
-                danger.spawnRate = danger.baseSpawnRate * spawnFactor;
-            } else danger.spawnRate = danger.baseSpawnRate;
-            if (danger.type === "spike") {
-                if (absoluteZero.passive === "Absolute Zero" || absoluteZero.passive === "Glaciation") danger.speed = danger.baseSpeed * slowFactor;
-                else danger.speed = danger.baseSpeed;
+
+            if (player.dodger === "jötunn") {
+                // limits the lowest possible distance by taking the higher value
+                const maxDist = Math.max(distance, absoluteZero.slowEnd);
+                
+                // limits the highest posible distance by taking the lower value
+                const factor = Math.min(1, (maxDist - absoluteZero.slowEnd) / (absoluteZero.slowStart - absoluteZero.slowEnd));
+                
+                // xFactor = min + max*(factor between 0 and 1)
+                const spawnFactor = 0.8 + 0.2*factor;
+                const slowFactor = 0.3 + 0.7*factor;
+                
+                if (absoluteZero.passive === "Absolute Zero" || absoluteZero.passive === "Stagnation") {
+                    danger.spawnRate = danger.baseSpawnRate * spawnFactor;
+                } else danger.spawnRate = danger.baseSpawnRate;
+                if (danger.type === "spike") {
+                    if (absoluteZero.passive === "Absolute Zero" || absoluteZero.passive === "Glaciation") danger.speed = danger.baseSpeed * slowFactor;
+                    else danger.speed = danger.baseSpeed;
+                }
+            }
+            if (player.dodger === "quasar" && eventHorizon.activated) {
+                let relativity = 1 + distance/300;
+                function eventHorizonEffect(danger, rate, baseRate) {
+                    let max = danger[baseRate] * relativity;
+
+                    // To max
+                    if (danger[rate] < max && now - eventHorizon.lastUsed < 4200) danger[rate] += max/50;
+                    if (danger[rate] > max && now - eventHorizon.lastUsed < 4200) danger[rate] -= max/50;
+                    
+                    // To base rate
+                    if (danger[rate] > danger[baseRate] && now - eventHorizon.lastUsed > 4200) danger[rate] -= max/50;
+                    if (danger[rate] < danger[baseRate] - max/50 && now - eventHorizon.lastUsed > 4200) danger[rate] = danger[baseRate];
+                }
+                
+                eventHorizonEffect(danger, "spawnRate", "baseSpawnRate");
+                eventHorizonEffect(danger, "despawnRate", "baseDespawnRate");
+                if (danger.type === "spike") eventHorizonEffect(danger, "speed", "baseSpeed");
             }
         }
 
