@@ -55,7 +55,9 @@ document.addEventListener("touchend", () => {
   recordLeftClick();
   if (isMobile()) mouseDown = false;
 });
-document.addEventListener("touchcancel", () => { if (isMobile()) mouseDown = false; });
+document.addEventListener("touchcancel", () => {
+  if (isMobile()) mouseDown = false;
+});
 
 // Input Tracking
 let mouseOver = {
@@ -84,6 +86,7 @@ function updateCursor(eventObject) {
     mouseX = (cursorX - rect.left) * scaleX;
     mouseY = (cursorY - rect.top) * scaleY;
 }
+
 function addCursorTrail() {
     if (cursorX !== undefined && cursorY !== undefined && settings.customCursor && trailDensity > 0) {
         // Trail Density
@@ -98,12 +101,14 @@ function addCursorTrail() {
         }
     }
 }
+
 // cursor update event listeners
 document.addEventListener('mousemove', (event) => {
     updateCursor(event);
     addCursorTrail();
     if (track) console.log(`x: ${mouseX.toFixed()} || y: ${mouseY.toFixed()}`);
 });
+
 document.addEventListener("touchmove", (event) => {
     mouseDown = true;
     updateCursor(event.touches[0]);
