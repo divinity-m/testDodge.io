@@ -52,11 +52,11 @@ document.addEventListener("auxclick", (event) => {
 
 // Touchscreen Events
 document.addEventListener("touchend", () => {
-  recordLeftClick();
-  if (isMobile()) mouseDown = false;
+    recordLeftClick();
+    mouseDown = false;
 });
 document.addEventListener("touchcancel", () => {
-  if (isMobile()) mouseDown = false;
+    mouseDown = false;
 });
 
 // Input Tracking
@@ -117,7 +117,7 @@ document.addEventListener("touchmove", (event) => {
 document.addEventListener("touchstart", (event) => {
     mouseDown = true;
     updateCursor(event.touches[0]);
-    if (isMobile()) allClicks.push(createClick("left"));
+    allClicks.push(createClick("left"));
     if (track) console.log(`x: ${mouseX.toFixed()} || y: ${mouseY.toFixed()}`);
 });
 
