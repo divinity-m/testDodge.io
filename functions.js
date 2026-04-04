@@ -29,8 +29,7 @@ function recordKeyDown(event) {
     if ((event.code === "KeyQ" || event.code === "KeyJ") && gameState !== "endlessOver") {
         if (player.dodger === "j-sab" && dash.usable && !dash.activated) dash.activated = true;
             
-        else if (player.dodger === "jolt" && shockwave.usable && !shockwave.activated) {
-            // activate the shockwave ability and set certain properties
+        if (player.dodger === "jolt" && shockwave.usable && !shockwave.activated) {
             shockwave.activated = true;
             shockwave.facingAngle = player.facingAngle;
             shockwave.x = player.x;
@@ -38,8 +37,15 @@ function recordKeyDown(event) {
             shockwave.movex = Math.cos(shockwave.facingAngle) * 7;
             shockwave.movey = Math.sin(shockwave.facingAngle) * 7;
             shockwave.used = shockwave.active;
-            if (shockwave.used === "Shockwave") { shockwave.cd = 8500; shockwave.effect = 0.75; }
-            else if (shockwave.used === "Shockray") { shockwave.cd = 5500; shockwave.effect = 0.5; }
+            if (shockwave.used === "Shockwave") { shockwave.cd = 7500; shockwave.effect = 0.75; shockwave.lastEnded = 0; }
+            else if (shockwave.used === "Shockray") { shockwave.cd = 4500; shockwave.effect = 0.5; }
+        }
+
+        if (player.dodger === "quasar" && eventHorizon.usable && !eventHorizon.activated) {
+            eventHorizon.activated = true;
+            eventHorizon.lastUsed = Date.now();
+            eventHorizon.av = 0;
+            eventHorizon.accretionDisk = createAccretionDisk();
         }
     } else if ((event.code === "KeyE" || event.code === "KeyK") && gameState !== "endlessOver") {
         if (player.dodger === "jötunn" && absoluteZero.usable) {
@@ -72,7 +78,7 @@ function recordRightClick(event) {
     if (gameState !== "endlessOver") {
         if (player.dodger === "j-sab" && dash.usable && !dash.activated) dash.activated = true;
         
-        else if (player.dodger === "jolt" && shockwave.usable && !shockwave.activated) {
+        if (player.dodger === "jolt" && shockwave.usable && !shockwave.activated) {
             shockwave.activated = true;
             shockwave.facingAngle = player.facingAngle;
             shockwave.x = player.x;
@@ -80,8 +86,15 @@ function recordRightClick(event) {
             shockwave.movex = Math.cos(shockwave.facingAngle) * 7;
             shockwave.movey = Math.sin(shockwave.facingAngle) * 7;
             shockwave.used = shockwave.active;
-            if (shockwave.used === "Shockwave") { shockwave.cd = 8500; shockwave.effect = 0.75; }
-            else if (shockwave.used === "Shockray") { shockwave.cd = 5500; shockwave.effect = 0.5; }
+            if (shockwave.used === "Shockwave") { shockwave.cd = 7500; shockwave.effect = 0.75; shockwave.lastEnded = 0; }
+            else if (shockwave.used === "Shockray") { shockwave.cd = 4500; shockwave.effect = 0.5; }
+        }
+
+        if (player.dodger === "quasar" && eventHorizon.usable && !eventHorizon.activated) {
+            eventHorizon.activated = true;
+            eventHorizon.lastUsed = Date.now();
+            eventHorizon.av = 0;
+            eventHorizon.accretionDisk = createAccretionDisk();
         }
     }
 }
@@ -118,39 +131,48 @@ function recordLeftClick() {
     }
     
     // Start screen buttons
-    if (innerGameState === "mainMenu" && (mouseOver.play || mouseOver.settings || mouseOver.selector)) {
+    if (innerGameState === "mainMenu" && (mouseOver.play || mouseOver.selector)) {
         if (mouseOver.play) innerGameState = "selectDifficulty";
-        else if (mouseOver.settings) innerGameState = "settings";
         else if (mouseOver.selector) innerGameState = "selectDodger";
-
         resetBgVars();
         mouseMovementOn = previousMM;
     }
+    
+    // Gear button
+    else if (gameState === "startScreen" && innerGameState != "settings" && mouseOver.settings) {
+        previousGameState = innerGameState;
+        innerGameState = "settings";
+        resetBgVars();
+        mouseMovementOn = previousMM;
+    }
+        
     // Buttons that redirect back to the start screen
     else if (gameState === "endlessOver" && mouseOver.restart ||
             innerGameState === "settings" && mouseOver.settings ||
             innerGameState === "selectDodger" && mouseOver.selector ||
             innerGameState === "selectDifficulty" && mouseOver.play) {
-        // Saves the users settings options when they exit the settings
-        if (innerGameState === "settings") {
-            userData.settings = settings;
-            if (now - clickEventSave > 500) {
-                localStorage.setItem('localUserData', JSON.stringify(userData));
-                clickEventSave = Date.now();
-            }
-        }
-        // Plays 'A New Start' when users are redirected back to the Main Menu
+        // Plays 'A New Start' when users are redirected back to the Main Menu from endless mode
         if (gameState === "endlessOver") {
             allEnemies = [];
             dash.lastEnded = 0;
             shockwave.reset();
             amplify.reset();
+            eventHorizon.reset();
             music = {var: aNewStart, name: "A New Start", artist: "Thygan Buch"};
             music.var.currentTime = 0;
             music.promise = music.var.play();
         }
+        // Saves the users settings options when they exit the settings
+        if (innerGameState === "settings") {
+            userData.settings = settings;
+            if (now - clickEventSave > 500) {
+                localStorage.setItem('localDodgeData', JSON.stringify(userData));
+                clickEventSave = Date.now();
+            }
+            innerGameState = previousGameState;
+        }
+        else innerGameState = "mainMenu";
         gameState = "startScreen";
-        innerGameState = "mainMenu";
         resetBgVars();
         mouseMovementOn = previousMM;
     }
@@ -186,7 +208,7 @@ function recordLeftClick() {
                 userData.settings = settings;
 
                 if (now - clickEventSave > 500) {
-                    localStorage.setItem('localUserData', JSON.stringify(userData));
+                    localStorage.setItem('localDodgeData', JSON.stringify(userData));
                     clickEventSave = Date.now();
                 }
     
@@ -195,22 +217,79 @@ function recordLeftClick() {
         })
     }
 
+    // Hero Choice
+    else if (innerGameState === "selectDodger") {
+        if (!player.invincible && (mouseOver.evader || mouseOver.j_sab || mouseOver.jötunn || mouseOver.jolt || mouseOver.crescendo || mouseOver.quasar)) {
+            if (mouseOver.evader) {
+                player.dodger = "evader";
+                player.color = "rgb(255, 255, 255)";
+                player.subColor = "rgb(230, 230, 230)";
+                amplify.reset();
+            }
+            if (mouseOver.j_sab && highscore.andromeda === 100) {
+                player.dodger = "j-sab";
+                player.color = "rgb(255, 0, 0)";
+                player.subColor = "rgb(230, 0, 0)";
+                amplify.reset();
+            }
+            if (mouseOver.jötunn && highscore.limbo === 100) {
+                player.dodger = "jötunn";
+                player.color = "rgb(79, 203, 255)";
+                player.subColor = "rgb(70, 186, 235)";
+                amplify.reset();
+            }
+            if (mouseOver.jolt && highscore.medium >= 30) {
+                player.dodger = "jolt";
+                player.color = "rgb(255, 255, 0)";
+                player.subColor = "rgb(230, 230, 0)";
+                amplify.reset();
+            }
+            if (mouseOver.crescendo && highscore.hard >= 60) {
+                player.dodger = "crescendo";
+                player.color = "rgb(0, 0, 0)";
+                player.subColor = "rgb(40, 40, 40)";
+            }
+            if (mouseOver.quasar && highscore.euphoria === 100) {
+                player.dodger = "quasar";
+                player.color = "rgb(255, 165, 0)";
+                player.subColor = "rgb(230, 153, 11)";
+                amplify.reset();
+            }
+            mouseMovementOn = previousMM;
+            // saves the players values to the local storage to keep track of the players dodger
+            userData.player = player;
+            if (now - clickEventSave > 500) {
+                localStorage.setItem('localDodgeData', JSON.stringify(userData));
+                clickEventSave = Date.now();
+            }
+        }
+    }
+        
     // Difficulty Choice
     else if (innerGameState === "selectDifficulty" && mouseOver) {
+        let locked = false;
+        if (mouseOver?.medium && highscore?.easy < 45) locked = true;
+        if (mouseOver?.hard && highscore?.medium < 45) locked = true;
+        if (mouseOver?.limbo && highscore?.easy < 30) locked = true;
+        if (mouseOver?.andromeda && highscore?.limbo < 75) locked = true;
+        if (mouseOver?.euphoria && highscore?.andromeda < 75) locked = true;
+
+        
         ["easy", "medium", "hard"].forEach(level => {
-            if (mouseOver?.[level]) {
+            if (mouseOver?.[level]) mouseMovementOn = previousMM;
+            if (mouseOver?.[level] && !locked) {
                 pauseAudio(music.promise, music.var);
                 if (mouseOver?.easy) difficulty = {level: "easy", color: "rgb(0, 225, 255)"};
                 if (mouseOver?.medium) difficulty = {level: "medium", color: "rgb(255, 255, 0)"};
                 if (mouseOver?.hard) difficulty = {level: "hard", color: "rgb(0, 0, 0)"};
                 music = {var: interstellar, name: "interstellar", artist: "pandora., chillwithme, & cødy",
                          color: "rgb(105, 105, 105)", subColor: "rgb(115, 115, 115)",};
-                mouseMovementOn = previousMM;
                 restartEndless();
             }
         });
         ["limbo", "andromeda", "euphoria"].forEach(level => {
-            if (mouseOver?.[level]) {
+            if (mouseOver?.[level]) mouseMovementOn = previousMM;
+            if (mouseOver?.[level] && !locked) {
                 pauseAudio(music.promise, music.var);
                 if (mouseOver?.limbo) {
                     music = {var: alarm9, name: "Alarm 9", artist: "Blue Cxve",
@@ -522,88 +601,54 @@ function recordLeftClick() {
                 }
                 music.timestamps.sort((a, b) => a[0] - b[0]);
                 music.backUpTS = [...music.timestamps];
-                mouseMovementOn = previousMM;
                 restartMusicMode();
             }
         })
     }
-    
-    // Hero Choice
-    else if (innerGameState === "selectDodger") {
-        if (!dash.activated && (mouseOver.evader || mouseOver.j_sab || mouseOver.jötunn || mouseOver.jolt || mouseOver.crescendo)) {
-            if (mouseOver.evader) {
-                player.dodger = "evader";
-                player.color = "rgb(255, 255, 255)";
-                player.subColor = "rgb(230, 230, 230)";
-                amplify.reset();
-            }
-            else if (mouseOver.j_sab && highscore.andromeda === 100) {
-                player.dodger = "j-sab";
-                player.color = "rgb(255, 0, 0)";
-                player.subColor = "rgb(230, 0, 0)";
-                amplify.reset();
-            }
-            else if (mouseOver.jötunn && highscore.limbo === 100) {
-                player.dodger = "jötunn";
-                player.color = "rgb(79, 203, 255)";
-                player.subColor = "rgb(70, 186, 235)";
-                amplify.reset();
-            }
-            else if (mouseOver.jolt && highscore.medium >= 30) {
-                player.dodger = "jolt";
-                player.color = "rgb(255, 255, 0)";
-                player.subColor = "rgb(230, 230, 0)";
-                amplify.reset();
-            }
-            else if (mouseOver.crescendo && highscore.hard >= 60) {
-                player.dodger = "crescendo";
-                player.color = "rgb(0, 0, 0)";
-                player.subColor = "rgb(40, 40, 40)";
-            }
-            mouseMovementOn = previousMM;
-            // saves the players values to the local storage to keep track of the players dodger
-            userData.player = player;
-            if (now - clickEventSave > 500) {
-                localStorage.setItem('localUserData', JSON.stringify(userData));
-                clickEventSave = Date.now();
-            }
-        }
-    }
+
+    // Mobile MM stays on
+    if (isMobile()) mouseMovementOn = true;
 }
 
 function detectHover() {
-    mouseOver.play = gameState === "startScreen" && (innerGameState === "mainMenu" || innerGameState === "selectDifficulty") && mouseX > 250 && mouseX < 550 && mouseY > 50 && mouseY < 150; // const playBtn = { x: 250, y: 50, w: 300, h: 100, };
-    mouseOver.selector = gameState === "startScreen" && (innerGameState === "mainMenu" || innerGameState === "selectDodger") && mouseX > 250 && mouseX < 550 && mouseY > 475 && mouseY < 575; // const selectorBtn = { x: 250, y: 475, w: 300, h: 100, };
+    mouseOver.play = gameState === "startScreen" && (innerGameState === "mainMenu" || innerGameState === "selectDifficulty") && mouseX > 250 && mouseX < 550 && mouseY > 50 && mouseY < 150;
+    mouseOver.selector = gameState === "startScreen" && (innerGameState === "mainMenu" || innerGameState === "selectDodger") && mouseX > 250 && mouseX < 550 && mouseY > 475 && mouseY < 575;
     mouseOver.settings = gameState === "startScreen" && Math.hypot(770 - mouseX, 620 - mouseY) < 30;
     mouseOver.restart = gameState === "endlessOver" && mouseX > 250 && mouseX < 550 && mouseY > 50 && mouseY < 150;
+    mouseOver.evades = gameState === "startScreen" && innerGameState === "mainMenu" && mouseX > 485 && mouseX < 570 && mouseY > 11 && mouseY < 28;
+    mouseOver.jsab = gameState === "startScreen" && innerGameState === "mainMenu" && mouseX > 612 && mouseX < 795 && mouseY > 11 && mouseY < 28;
 
-    mouseOver.evader = gameState === "startScreen" && innerGameState === "selectDodger" && mouseX > 50 && mouseX < 250 && mouseY > 25 && mouseY < 125;
-    mouseOver.j_sab = gameState === "startScreen" && innerGameState === "selectDodger" && mouseX > 425 && mouseX < 625 && mouseY > 150 && mouseY < 250;
-    mouseOver.jötunn = gameState === "startScreen" && innerGameState === "selectDodger" && mouseX > 550 && mouseX < 750 && mouseY > 25 && mouseY < 125;
-    mouseOver.jolt = gameState === "startScreen" && innerGameState === "selectDodger" && mouseX > 300 && mouseX < 500 && mouseY > 25 && mouseY < 125;
-    mouseOver.crescendo = gameState === "startScreen" && innerGameState === "selectDodger" && mouseX > 175 && mouseX < 375 && mouseY > 150 && mouseY < 250;
+    let dodgerSelection = gameState === "startScreen" && innerGameState === "selectDodger";
+    mouseOver.evader = dodgerSelection && mouseX > 50 && mouseX < 250 && mouseY > 25 && mouseY < 125;
+    mouseOver.jolt = dodgerSelection && mouseX > 300 && mouseX < 500 && mouseY > 25 && mouseY < 125;
+    mouseOver.jötunn = dodgerSelection && mouseX > 550 && mouseX < 750 && mouseY > 25 && mouseY < 125;
+    mouseOver.crescendo = dodgerSelection && mouseX > 50 && mouseX < 250 && mouseY > 150 && mouseY < 250;
+    mouseOver.j_sab = dodgerSelection && mouseX > 300 && mouseX < 500 && mouseY > 150 && mouseY < 250;
+    mouseOver.quasar = dodgerSelection && mouseX > 550 && mouseX < 750 && mouseY > 150 && mouseY < 250;
 
-    mouseOver.easy = gameState === "startScreen" && innerGameState === "selectDifficulty" && mouseX > 50 && mouseX < 250 && mouseY > 450 && mouseY < 550;
-    mouseOver.medium = gameState === "startScreen" && innerGameState === "selectDifficulty" && mouseX > 300 && mouseX < 500 && mouseY > 450 && mouseY < 550;
-    mouseOver.hard = gameState === "startScreen" && innerGameState === "selectDifficulty" && mouseX > 550 && mouseX < 750 && mouseY > 450 && mouseY < 550;
-    mouseOver.limbo = gameState === "startScreen" && innerGameState === "selectDifficulty" && mouseX > 50 && mouseX < 250 && mouseY > 250 && mouseY < 350;
-    mouseOver.andromeda = gameState === "startScreen" && innerGameState === "selectDifficulty" && mouseX > 300 && mouseX < 500 && mouseY > 250 && mouseY < 350;
-    mouseOver.euphoria = gameState === "startScreen" && innerGameState === "selectDifficulty" && mouseX > 550 && mouseX < 750 && mouseY > 250 && mouseY < 350;
+    let difficultySelection = gameState === "startScreen" && innerGameState === "selectDifficulty";
+    mouseOver.easy = difficultySelection && mouseX > 50 && mouseX < 250 && mouseY > 250 && mouseY < 350;
+    mouseOver.medium = difficultySelection && mouseX > 300 && mouseX < 500 && mouseY > 250 && mouseY < 350;
+    mouseOver.hard = difficultySelection && mouseX > 550 && mouseX < 750 && mouseY > 250 && mouseY < 350;
+    mouseOver.limbo = difficultySelection && mouseX > 50 && mouseX < 250 && mouseY > 450 && mouseY < 550;
+    mouseOver.andromeda = difficultySelection && mouseX > 300 && mouseX < 500 && mouseY > 450 && mouseY < 550;
+    mouseOver.euphoria = difficultySelection && mouseX > 550 && mouseX < 750 && mouseY > 450 && mouseY < 550;
 
-    mouseOver.enemyOutBtn = gameState === "startScreen" && innerGameState === "settings" && mouseX > 216 && mouseX < 236 && mouseY > 35 && mouseY < 55;
-    mouseOver.disableMMBtn = gameState === "startScreen" && innerGameState === "settings" && mouseX > 318 && mouseX < 338 && mouseY > 85 && mouseY < 105;
-    mouseOver.musicSlider = gameState === "startScreen" && innerGameState === "settings" && mouseX >= 555 && mouseX <= 725 && mouseY >= 30 && mouseY <= 60;
-    mouseOver.sfxSlider = gameState === "startScreen" && innerGameState === "settings" && mouseX >= 542 && mouseX <= 712 && mouseY >= 80 && mouseY <= 110;
-    mouseOver.aZ_RangeBtn = gameState === "startScreen" && innerGameState === "settings" && mouseX > 266 && mouseX < 286 && mouseY > 135 && mouseY < 155;
-    mouseOver.aZ_AvSlider = gameState === "startScreen" && innerGameState === "settings" && mouseX >= 545 && mouseX <= 715 && mouseY >= 130 && mouseY <= 160;
-    mouseOver.customCursorBtn = gameState === "startScreen" && innerGameState === "settings" && mouseX > 167 && mouseX < 187 && mouseY > 185 && mouseY < 205;
-    mouseOver.cursorTrailSlider = gameState === "startScreen" && innerGameState === "settings" && mouseX >= 540 && mouseX <= 710 && mouseY >= 180 && mouseY <= 210;
+    let settingsMenu = gameState === "startScreen" && innerGameState === "settings";
+    mouseOver.enemyOutBtn = settingsMenu && mouseX > 216 && mouseX < 236 && mouseY > 35 && mouseY < 55;
+    mouseOver.disableMMBtn = settingsMenu && mouseX > 318 && mouseX < 338 && mouseY > 85 && mouseY < 105;
+    mouseOver.musicSlider = settingsMenu && mouseX >= 555 && mouseX <= 725 && mouseY >= 30 && mouseY <= 60;
+    mouseOver.sfxSlider = settingsMenu && mouseX >= 542 && mouseX <= 712 && mouseY >= 80 && mouseY <= 110;
+    mouseOver.aZ_RangeBtn = settingsMenu && mouseX > 266 && mouseX < 286 && mouseY > 135 && mouseY < 155;
+    mouseOver.aZ_AvSlider = settingsMenu && mouseX >= 545 && mouseX <= 715 && mouseY >= 130 && mouseY <= 160;
+    mouseOver.customCursorBtn = settingsMenu && mouseX > 167 && mouseX < 187 && mouseY > 185 && mouseY < 205;
+    mouseOver.cursorTrailSlider = settingsMenu && mouseX >= 540 && mouseX <= 710 && mouseY >= 180 && mouseY <= 210;
 }
 
 // FUNCTIONS THAT DRAWS STUFF TO THE SCREEN
 function drawCircle(x = 0, y = 0, r = 12.5, type = "fill") {
-    ctx.beginPath()
-    ctx.arc(x, y, r, Math.PI * 2, 0)
+    ctx.beginPath();
+    ctx.arc(x, y, r, Math.PI * 2, 0);
     if (type === "fill") ctx.fill();
     else if (type === "stroke") ctx.stroke();
 }
@@ -614,10 +659,13 @@ function decideFillStyle(bool, color1, color2) {
 }
 
 function createCursor() {
+    let rad;
+    if (isMobile()) rad = 7.5/2;
+    else rad = window.innerWidth * (7.5/1397);
     let cursor = {
-        r: 7.5,
+        r: rad,
         av: 1,
-        subR: 7.5/Math.max(1, 30*trailDensity),
+        subR: rad/Math.max(1, 30*trailDensity),
         subAv: 1/Math.max(1, 30*trailDensity),
     }
     cursor.x = cursorX;
@@ -634,11 +682,14 @@ function createCursor() {
 }
 
 function createClick(button) {
+    let rad;
+    if (isMobile()) rad = 12.5;
+    else rad = window.innerWidth * (25/1397);
     let click = {
-        r: 1,
+        r: 0,
         av: 1,
-        addR: 24/15, // 1 + 24/15 * 15
-        subAv: 1/15, // 1 - 1/15 * 15
+        addR: rad/15, // add a 15th of whatever number i want it to reach
+        subAv: 1/15, // subtract a 15th of 1 until it reaches 0 (then deletes itself cuz its invisible)
         button: button,
     }
     click.x = cursorX;
@@ -694,16 +745,36 @@ function drawStartScreen() {
     if (bgTopX <= bgTopMax) bgTopX += dBgTopX;
     if (bgBottomX >= bgBottomMax && bgTopX >= bgTopMax - 25) bgBottomX += dBgBottomX;
 
-    if (innerGameState === "mainMenu") {
-        // Me
+    if (innerGameState === "mainMenu" || innerGameState === "selectDifficulty") {
+        // ME //
         ctx.strokeStyle = player.color;
         ctx.lineWidth = 1.5;
         ctx.font = '30px Roboto';
         ctx.textAlign = 'left';
         ctx.strokeText("Vasto", 5, 30);
-    }
+        // ctx.drawImage(document.getElementById("instalogo"), 85, 5, 30, 30);
 
-    if (innerGameState === "mainMenu" || innerGameState === "selectDifficulty") {
+        // CREDITS //
+        ctx.fillStyle = "rgb(0, 0, 0)";
+        ctx.font = "bold 16px Verdana";
+        ctx.textAlign = "left";
+        if (isMobile()) {
+            ctx.textAlign = "right";
+            ctx.fillText("Inspired by Evades.io and Just Shapes & Beats", GAME_WIDTH-5, 25);
+        }
+        else {
+            ctx.fillText("Inspired by                 and", 378, 25);
+                
+            if (mouseOver?.evades) ctx.fillStyle = "#8ad3ff";
+            else ctx.fillStyle = "#6bc6ff";
+            ctx.fillText("Evades.io", 485, 25);
+    
+            if (mouseOver?.jsab) ctx.fillStyle = "#ff699f";
+            else ctx.fillStyle = "#ff2f7a";
+            ctx.textAlign = "right";
+            ctx.fillText("Just Shapes & Beats", GAME_WIDTH-5, 25);
+        }
+        
         // PLAY BUTTON //
         const playBtn = {
             x: 250,
@@ -843,7 +914,7 @@ function drawSettings() {
     music.var.volume = musicVolume;
     sharpPop.volume = sfxVolume;
 
-    if (innerGameState === "mainMenu") ctx.drawImage(document.getElementById("gear-filled"), gear.x, gear.y, 40, 40);
+    if (gameState === "startScreen" && innerGameState != "settings") ctx.drawImage(document.getElementById("gear-filled"), gear.x, gear.y, 40, 40);
     else if (innerGameState === "settings") {
         ctx.drawImage(document.getElementById("gear-unfilled"), gear.x, gear.y, 40, 40);
         
@@ -917,24 +988,47 @@ function drawSettings() {
 
 function drawDifficultySelection() {
     // Nested functions cuz fuck doing this shit over and over again
-    function drawDifficultyInfo(x, y, color, difficultyName, score, adversary, ...description) {
+    function drawDifficultyCard(mouseOver, unlocked, x, y, colors, difficultyName, score, requirement, adversary, ...description) {
+        // Rect
+        decideFillStyle(mouseOver, colors[0], colors[1]);
+        ctx.fillRect(x, y, 200, 100);
+        
         // Level Name
-        ctx.fillStyle = color;
+        ctx.fillStyle = colors[2];
         ctx.textAlign = "left";
         ctx.font = "bold 19px 'Lucida Console'";
-        ctx.fillText(difficultyName, x, y);
+        ctx.fillText(difficultyName, x+10, y+30);
 
         // Level Score
         if (score !== "none") {
             ctx.textAlign = "right";
-            ctx.fillText(score, x + 180, y);
+            ctx.fillText(score, x + 190, y+30);
         }
 
         // Level Description
         ctx.textAlign = "left";
         ctx.font = "15.5px 'Lucida Console'";
-        ctx.fillText(`${adversary}:  ${description[0]}`, x, y + 25);
-        if (description[1]) ctx.fillText(description[1], x, y + 50);
+        ctx.fillText(`${adversary}:  ${description[0]}`, x+10, y + 55);
+        if (description[1]) ctx.fillText(description[1], x+10, y + 80);
+
+        if (!unlocked) {
+            if (difficultyName === "HARD") ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+            else if (difficultyName === "LIMBO") ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+            else if (difficultyName === "ANDROMEDA") ctx.fillStyle = "rgba(0, 0, 0, 0.92)";
+            else ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+            ctx.fillRect(x, y, 200, 100);
+
+            ctx.lineWidth = 1.25;
+            ctx.textAlign = "center";
+
+            ctx.strokeStyle = "rgb(255, 255, 255)";
+            ctx.font = "bold 20px Arial";
+            ctx.strokeText(requirement, x + 100, y + 55);
+            
+            ctx.strokeStyle = colors[2];
+            ctx.font = "bold 19.5px Arial";
+            ctx.strokeText(requirement, x + 100, y + 55);
+        }
     }
     function drawPercentCompleted(x, y, color, percent) {
         ctx.strokeStyle = "rgb(255, 255, 255)";
@@ -942,9 +1036,9 @@ function drawDifficultySelection() {
         if (percent === 100) ctx.strokeStyle = color;
 
         // 50 + 200 + 50 = 300 || 1/6 + 2/3 + 1/6 = 1
-        let left = Math.min(1/6*100, percent) * 3; // 1/6
-        let middle = Math.max(Math.min(5/6*100-1/6*100, percent-1/6*100), 0) * 3; // 1/6 + 2/3
-        let right = Math.max(percent-(5/6*100), 0) * 3; // 1/6 + 2/3 + 1/6
+        let left = Math.min(1/6*100, percent) * 3; // 0 to 1/6
+        let middle = Math.max(Math.min(5/6*100-1/6*100, percent-1/6*100), 0) * 3; // 1/6 to 2/3
+        let right = Math.max(percent-(5/6*100), 0) * 3; // 2/3 to 1
         
         ctx.beginPath();
         ctx.moveTo(x, y+50);
@@ -979,36 +1073,37 @@ function drawDifficultySelection() {
     ctx.fillStyle = "grey";
     
     ctx.font = "bold 30px Arial";
-    ctx.fillText("NORMAL LEVELS", GAME_WIDTH/2, 220);
-    ctx.fillText("ENDLESS LEVELS", GAME_WIDTH/2, 420);
+    ctx.fillText("ENDLESS LEVELS", GAME_WIDTH/2, 220);
+    ctx.fillText("FINITE LEVELS", GAME_WIDTH/2, 420);
 
     // Levels
-    decideFillStyle(mouseOver.limbo, "rgb(128, 0, 128)", "rgb(100, 0, 100)");
-    ctx.fillRect(50, 250, 200, 100);
-    drawDifficultyInfo(60, 280, "rgb(163, 0, 163)", "LIMBO", `${highscore.limbo}%`, "Dangers", "Beams");
-    drawPercentCompleted(50, 250, "rgb(163, 0, 163)", highscore.limbo);
+    drawDifficultyCard(mouseOver.easy, true, 50, 250,
+                       ["rgb(0, 191, 216)", "rgb(0, 171, 194)", "rgb(0, 225, 255)"],
+                       "EASY", `${highscore.easy}s`, "None", "Enemies", "Normals");
     
-    decideFillStyle(mouseOver.andromeda, "rgb(240, 240, 240)", "rgb(220, 220, 220)");
-    ctx.fillRect(300, 250, 200, 100);
-    drawDifficultyInfo(310, 280, "rgb(0, 0, 0)", "ANDROMEDA", `${highscore.andromeda}%`, "Dangers", "Beams  Bombs", "Rings");
-    drawPercentCompleted(300, 250, "rgb(0, 0, 0)", highscore.andromeda);
-
-    decideFillStyle(mouseOver.euphoria, "rgb(224, 255, 232)", "rgb(223, 255, 156)");
-    ctx.fillRect(550, 250, 200, 100);
-    drawDifficultyInfo(560, 280, "rgb(255, 165, 252)", "EUPHORIA", `${highscore.euphoria}%`, "Dangers", "Beams  Bombs", "Rings  Spikes");
-    drawPercentCompleted(550, 250, "rgb(255, 165, 252)", highscore.euphoria);
-
-    decideFillStyle(mouseOver.easy, "rgb(0, 191, 216)", "rgb(0, 171, 194)");
-    ctx.fillRect(50, 450, 200, 100);
-    drawDifficultyInfo(60, 480, "rgb(0, 225, 255)", "EASY", `${highscore.easy}s`, "Enemies", "Normals");
+    drawDifficultyCard(mouseOver.medium, highscore.easy >= 45, 300, 250,
+                       ["rgb(220, 220, 0)", "rgb(200, 200, 0)", "rgb(255, 255, 0)"],
+                       "MEDIUM", `${highscore.medium}s`, "EASY 45S", "Enemies", "Normals", "Decelerators");
     
-    decideFillStyle(mouseOver.medium, "rgb(220, 220, 0)", "rgb(200, 200, 0)");
-    ctx.fillRect(300, 450, 200, 100);
-    drawDifficultyInfo(310, 480, "rgb(255, 255, 0)", "MEDIUM", `${highscore.medium}s`, "Enemies", "Normals", "Decelerators");
+    drawDifficultyCard(mouseOver.hard, highscore.medium >= 45, 550, 250,
+                       ["rgb(40, 40, 40)", "rgb(50, 50, 50)", "rgb(0, 0, 0)"],
+                       "HARD", `${highscore.hard}s`, "MEDIUM 45S", "Enemies", "Normals", "Decelerators  Homings");
+    
+    drawDifficultyCard(mouseOver.limbo, highscore.easy >= 30, 50, 450,
+                       ["rgb(128, 0, 128)", "rgb(100, 0, 100)", "rgb(163, 0, 163)"],
+                       "LIMBO", `${highscore.limbo}%`, "EASY 30S", "Dangers", "Beams");
+    
+    drawDifficultyCard(mouseOver.andromeda, highscore.limbo >= 75, 300, 450,
+                       ["rgb(240, 240, 240)", "rgb(220, 220, 220)", "rgb(0, 0, 0)"],
+                       "ANDROMEDA", `${highscore.andromeda}%`, "LIMBO 75%", "Dangers", "Beams  Bombs", "Rings");
+    
+    drawDifficultyCard(mouseOver.euphoria, highscore.andromeda >= 75, 550, 450,
+                       ["rgb(224, 255, 232)", "rgb(223, 255, 156)", "rgb(255, 165, 252)"],
+                       "EUPHORIA", `${highscore.euphoria}%`, "ANDROMEDA 75%", "Dangers", "Beams  Bombs", "Rings  Spikes");
 
-    decideFillStyle(mouseOver.hard, "rgb(40, 40, 40)", "rgb(50, 50, 50)");
-    ctx.fillRect(550, 450, 200, 100);
-    drawDifficultyInfo(560, 480, "rgb(0, 0, 0)", "HARD", `${highscore.hard}s`, "Enemies", "Normals", "Decelerators  Homings");
+    drawPercentCompleted(50, 450, "rgb(163, 0, 163)", highscore.limbo);
+    drawPercentCompleted(300, 450, "rgb(0, 0, 0)", highscore.andromeda);
+    drawPercentCompleted(550, 450, "rgb(255, 165, 252)", highscore.euphoria);
 }
 
 function drawDodgerSelection() {
@@ -1017,6 +1112,10 @@ function drawDodgerSelection() {
         // Rectangle
         decideFillStyle(mouseOver, colors[0], colors[1]);
         ctx.fillRect(dodger.x, dodger.y, 200, 100);
+        
+        ctx.strokeStyle = colors[2];
+        ctx.lineWidth = 2;
+        ctx.strokeRect(dodger.x, dodger.y, 200, 100);
 
         // Circle
         ctx.fillStyle = colors[2];
@@ -1031,9 +1130,10 @@ function drawDodgerSelection() {
 
         // Locked
         if (!unlocked) {
-            if (dodgerName !== "CRESCENDO") ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-            else ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+            if (dodgerName === "CRESCENDO") ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+            else ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
             ctx.fillRect(dodger.x, dodger.y, 200, 100);
+            
             ctx.lineWidth = 1.25;
             ctx.textAlign = "center";
 
@@ -1064,12 +1164,13 @@ function drawDodgerSelection() {
             for (let i = 0; i < description.length; i++) ctx.fillText(description[i], 70, 335 + i*25);
 
             if (!unlocked) {
-                if (abilityName !== "AMPLIFY") ctx.fillStyle = "rgba(0, 0, 0, 0.825)";
-                else ctx.fillStyle = "rgba(0, 0, 0, 0.525)";
+                if (abilityName === "AMPLIFY") ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+                else ctx.fillStyle = "rgba(0, 0, 0, 0.925)";
                 ctx.fillRect(50, 275, 700, 175);
+                
                 ctx.lineWidth = 2;
                 ctx.textAlign = "center";
-
+                
                 ctx.strokeStyle = "rgb(255, 255, 255)";
                 ctx.font = "bold 71px Arial";
                 ctx.strokeText("LOCKED", GAME_WIDTH/2, 387);
@@ -1085,8 +1186,9 @@ function drawDodgerSelection() {
     const evader = { x: 50, y: 25, };
     const jolt = { x: 300, y: 25, };
     const jötunn = { x: 550, y: 25, };
-    const crescendo = { x: 175, y: 150, };
-    const j_sab = { x: 425, y: 150, };
+    const crescendo = { x: 50, y: 150, };
+    const j_sab = { x: 300, y: 150, };
+    const quasar = { x: 550, y: 150, };
 
     // Dodger Cards
     drawDodgerCard(mouseOver.evader, true, evader, "EVADER", "SKILL", "NONE", "rgb(230, 230, 230)", "rgb(220, 220, 220)", "white");
@@ -1094,6 +1196,7 @@ function drawDodgerSelection() {
     drawDodgerCard(mouseOver.jötunn, highscore.limbo === 100, jötunn, "JÖTUNN", "ABSOLUTE ZERO", "LIMBO 100%", "rgb(75, 180, 225)", "rgb(68, 168, 212)", "rgb(79, 203, 255)");
     drawDodgerCard(mouseOver.crescendo, highscore.hard >= 60, crescendo, "CRESCENDO", "AMPLIFY", "HARD 60S", "rgb(30, 30, 30)", "rgb(40, 40, 40)", "rgb(0, 0, 0)");
     drawDodgerCard(mouseOver.j_sab, highscore.andromeda === 100, j_sab, "J-SAB", "DASH", "ANDROMEDA 100%", "rgb(230, 0, 0)", "rgb(220, 0, 0)", "rgb(255, 0, 0)");
+    drawDodgerCard(mouseOver.quasar, highscore.euphoria === 100, quasar, "QUASAR", "EVENT HORIZON", "EUPHORIA 100%", "rgb(230, 153, 11)", "rgb(219, 144, 7)", "rgb(255, 165, 0)");
 
     // Ability Descriptions
     drawAbilityDesc(mouseOver.evader, true, "rgba(255, 255, 255, 0.7)", "rgba(220, 220, 220, 0.9)", "rgba(200, 200, 200, 0.7)", "SKILL",
@@ -1105,7 +1208,7 @@ function drawDodgerSelection() {
                     "unfortunate soul stricken by the electrically infused pluse.",
                     "Shockwave Effect Reduction: 25% | Shockray Effect Reduction: 50%",
                     "Effect Duration: Danger - 2.93s, Enemy - 5.43s",
-                    "Shockwave Cooldown: 5.5s | Shockray Cooldown: 8.5s");
+                    "Shockwave Cooldown: 7.5s | Shockray Cooldown: 4.5s");
     drawAbilityDesc(mouseOver.jötunn, highscore.limbo === 100, "rgba(79, 203, 255, 0.7)", "rgba(70, 186, 235, 0.9)", "rgba(52, 157, 201, 0.7)", "ABSOLUTE ZERO",
                     "Jötunns create spasmodic endothermic reactions within their cores, causing their",
                     "surroundings to rapidly freeze to absolute zero. Such gigantic and erratic drops in",
@@ -1123,7 +1226,13 @@ function drawDodgerSelection() {
                     "them, these dodgers instantaneously warp forward through the erased void, allowing",
                     "them to maneuver swiftly, precisely, and covertly at supersonic speeds.",
                     "Top Speed: 17.5 | Dash Duration: 0.25s | Post-Dash Invinciblility Duration: 0.25s",
-                    "Dash Cooldown: 2s");
+                    "Cooldown: 2s");
+    drawAbilityDesc(mouseOver.quasar, highscore.euphoria === 100, "rgba(255, 165, 0, 0.7)", "rgba(230, 153, 11, 0.9)", "rgba(201, 135, 14, 0.9)", "EVENT HORIZON",
+                   "Quasars manifest the properties of black holes within their cores to replicate their",
+                   "indecipherable physics. Sorrounded by an accretion disk and lost within relatavistic",
+                   "space-time they not only become impossible to touch, but their event horizon causes",
+                   "their surroundings to accelerate indefinitely, meanwhile, they lie stuck in time.",
+                   "Duration: 5s | Cooldown: 7s");
 }
 
 function drawGameOver() {
@@ -1238,7 +1347,7 @@ function drawPlayer() {
     }
 
     // Determines player invincibility and draws the shield
-    if (now-player.hit < 1500 || dash.activated || now-dash.lastEnded < 250) {
+    if (now-player.hit < 1500 || dash.activated || now-dash.lastEnded < 250 || eventHorizon.activated) {
         player.invincible = true;
         
         ctx.lineWidth = 1.75;
@@ -1253,7 +1362,7 @@ function drawPlayer() {
     
         ctx.lineTo(player.x+7.5, player.y+3);
         ctx.lineTo(player.x, player.y+10);
-        ctx.lineTo(player.x-7.5, player.y+3);
+        ctx.lineTo(player.x-7.5, player.y+2.5);
         ctx.stroke();
     }
     else player.invincible = false;
@@ -1315,15 +1424,15 @@ function drawText() { // draws the current time, highest time, and enemy count
         // Level Percentage
         let percentage = Math.floor(music.var.currentTime / music.var.duration * 100);
         if (gameState === "musicMode") {
-            if (music.name === "Alarm 9") highscore.limbo = Math.max(highscore.limbo, percentage);
-            if (music.name === "Astral Projection") highscore.andromeda = Math.max(highscore.andromeda, percentage);
-            if (music.name === "Divine") highscore.euphoria = Math.max(highscore.euphoria, percentage);
+            if (music.name === "Alarm 9") highscore.limbo = Math.min(Math.max(highscore.limbo, percentage), 100);
+            if (music.name === "Astral Projection") highscore.andromeda = Math.min(Math.max(highscore.andromeda, percentage), 100);
+            if (music.name === "Divine") highscore.euphoria = Math.min(Math.max(highscore.euphoria, percentage), 100);
         }
         
         // Saves data every 1.5 seconds incase the user disconnects/crashes
         userData.highscore = highscore;
         if (now - lastSave > 1500) {
-            localStorage.setItem('localUserData', JSON.stringify(userData));
+            localStorage.setItem('localDodgeData', JSON.stringify(userData));
             lastSave = Date.now();
         }
     }
@@ -1384,7 +1493,7 @@ function drawText() { // draws the current time, highest time, and enemy count
     if (player.dodger === "evader") ctx.fillText(`Passive: Skill`, textX, 620);
 
     // Dash
-    else if (player.dodger === "j-sab") {
+    if (player.dodger === "j-sab") {
         // Dash CD
         let dashCDLeft = ((1100 - (now - dash.lastEnded)) / 1000).toFixed(2);
 
@@ -1398,7 +1507,7 @@ function drawText() { // draws the current time, highest time, and enemy count
     }
 
     // Absolute Zero
-    else if (player.dodger === "jötunn") {
+    if (player.dodger === "jötunn") {
         // Absolute Zero CD
         let absoluteZeroCDLeft = ((1000 - (now - absoluteZero.lastEnded)) / 1000).toFixed(3);
 
@@ -1412,21 +1521,35 @@ function drawText() { // draws the current time, highest time, and enemy count
     }
 
     // Shockwave
-    else if (player.dodger === "jolt") {
+    if (player.dodger === "jolt") {
         // Shockwave CD
         let shockwaveCDLeft = ((shockwave.cd - (now - shockwave.lastEnded)) / 1000).toFixed(2);
 
-        if (now - shockwave.lastEnded < shockwave.cd && !shockwave.activated) { // 5.5s or 8.5s
-            shockwave.usable = false;
-            ctx.fillText(`Active: ${shockwave.active} (${shockwaveCDLeft}s) | Swap (${controls[1]})`, textX, 620);
-        } else {
+        if (now - shockwave.lastEnded >= shockwave.cd) { // 7.5s and 4.5s
             shockwave.usable = true;
             ctx.fillText(`Active: ${shockwave.active} (${controls[0]}) | Swap (${controls[1]})`, textX, 620);
+        } else {
+            shockwave.usable = false;
+            ctx.fillText(`Active: ${shockwave.active} (${shockwaveCDLeft}s) | Swap (${controls[1]})`, textX, 620);
         }
     }
 
     // Amplify
-    else if (player.dodger === "crescendo") ctx.fillText(`Passive: Amplify ${player.baseSpeed.toFixed(1)}`, textX, 620);
+    if (player.dodger === "crescendo") ctx.fillText(`Passive: Amplify ${player.baseSpeed.toFixed(1)}`, textX, 620);
+
+    // Event Horizon
+    if (player.dodger === "quasar") {
+        // Event Horizon CD
+        let eventHorizonCDLeft = ((7000 - (now - eventHorizon.lastEnded)) / 1000).toFixed(2);
+
+        if (now - eventHorizon.lastEnded >= 7000) {
+            eventHorizon.usable = true;
+            ctx.fillText(`Active: Event Horizon (${controls[0]})`, textX, 620);
+        } else {
+            eventHorizon.usable = false;
+            ctx.fillText(`Active: Event Horizon (${eventHorizonCDLeft}s)`, textX, 620);
+        }
+    }
 }
 
 function createEnemy() { // Creates an individual enemy with unique attributes
@@ -1646,6 +1769,7 @@ function restartEndless() { // Resets certain variables once the play button is 
     dash.lastEnded = 0;
     shockwave.reset();
     amplify.reset();
+    eventHorizon.reset();
     
     innerGameState = "inEndless";
     gameState = "endlessMode"
@@ -1661,7 +1785,7 @@ function collisions() { // Keeps track of when the player touches any enemy in t
                 gameState = "endlessOver";
                 // Saves data once the user dies
                 userData.highscore = highscore;
-                localStorage.setItem('localUserData', JSON.stringify(userData));
+                localStorage.setItem('localDodgeData', JSON.stringify(userData));
             }
         }
         if (gameState === "endlessOver") underAura = 0;
@@ -1705,8 +1829,9 @@ function abilities() { // player-specific abilities
             const slowFactor = 0.3 + 0.7 * factor;
     
             enemy.speed = enemy.baseSpeed * slowFactor;
-            enemy.speed = enemy.baseSpeed * slowFactor;
         })
+    } else if (player.dodger === "jötunn" && absoluteZero.passive === "Stagnation") {
+        allEnemies.forEach(enemy => {enemy.speed = enemy.baseSpeed})
     }
     // Shockwave launches an electromagnetic pulse that stuns and shrinks adversaries
     if (shockwave.activated) {
@@ -1800,8 +1925,102 @@ function abilities() { // player-specific abilities
                 player.baseSpeed = amplify.baseSpeed + amplify.speed;
         }
     }
+    // Event Horizon makes the player invincible but speeds up nearby enemies
+    if (eventHorizon.activated) {
+        // Player Changes
+        player.color = "rgb(0, 0, 0)";
+        player.subColor = "rgb(255, 165, 0)";
+        if (player.baseSpeed > 1 && now - eventHorizon.lastUsed < 1000) player.baseSpeed -= 0.05;
+        if (player.baseSpeed < 5 && now - eventHorizon.lastUsed > 4000) player.baseSpeed += 0.05;
+
+        // Event Horizon Gradient
+        const eventHorizonGrad = ctx.createRadialGradient(player.x, player.y, 15, player.x, player.y, 1010);
+        eventHorizonGrad.addColorStop(0, `rgba(255, 255, 255, ${eventHorizon.av})`);
+        eventHorizonGrad.addColorStop(0.25, `rgba(255, 165, 0, ${eventHorizon.av})`);
+        eventHorizonGrad.addColorStop(0.5, `rgba(255, 0, 0, ${eventHorizon.av})`);
+        eventHorizonGrad.addColorStop(1, `rgba(200, 0, 0, ${eventHorizon.av})`);
+
+        // Background Accretion Disk
+        ctx.fillStyle = eventHorizonGrad;
+        drawCircle(player.x, player.y, 1010, "fill");
+        ctx.strokeStyle = `rgba(165, 0, 0, ${eventHorizon.av})`;
+
+        // Accretion Disk Dust
+        eventHorizon.accretionDisk.forEach(dust => {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            
+            ctx.rotate(dust.gravity);
+            dust.gravity += dust.baseGravity;
+            
+            ctx.fillStyle = `rgba(${dust.color}, ${eventHorizon.av})`;
+            drawCircle(dust.x, dust.y, 2.5, "fill");
+            
+            ctx.restore();
+        })
+
+        if (eventHorizon.av < 0.65 && now - eventHorizon.lastUsed < 1300) eventHorizon.av += 0.01;
+        else if (eventHorizon.av > 0 && now - eventHorizon.lastUsed > 3700) eventHorizon.av -= 0.01;
+
+        // Speed up enemies
+        allEnemies.forEach(enemy => {
+            let dist = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+            let relativity = 1 + dist/300;
+            let max = enemy.baseSpeed * relativity;
+
+            // To max
+            if (enemy.speed < max && now - eventHorizon.lastUsed < 4200) enemy.speed += max/50;
+            if (enemy.speed > max && now - eventHorizon.lastUsed < 4200) enemy.speed -= max/50;
+            
+            // To base speed
+            if (enemy.speed > enemy.baseSpeed && now - eventHorizon.lastUsed > 4200) enemy.speed -= max/50;
+            if (enemy.speed < enemy.baseSpeed - max/50 && now - eventHorizon.lastUsed > 4200) enemy.speed = enemy.baseSpeed;
+        })
+
+        // Reset and Deactivate Event Horizon
+        if (now - eventHorizon.lastUsed >= 5000) {
+            player.baseSpeed = 5;
+            player.color = "rgb(255, 165, 0)";
+            player.subColor = "rgb(230, 153, 11)";
+            eventHorizon.activated = false;
+            eventHorizon.lastEnded = Date.now();
+            eventHorizon.accretionDisk = [];
+        }
+    }
 }
-           
+
+function createAccretionDisk() {
+    let accretionDisk = [];
+    function createDust() {
+        let max = 1005, min = 25; // radius of the accretion disk is 1010
+        let randAngle = Math.random() * Math.PI*2; // random angle between 0 and 3.14*2
+        let randDist = Math.random() * max;
+        let dust = {
+            x: randDist * Math.cos(randAngle),
+            y: randDist * Math.sin(randAngle),
+        }
+        
+        while (Math.hypot(dust.x, dust.y) < min) {
+            randDist = Math.random * max;
+            dust.x = randDist * Math.cos(randAngle);
+            dust.y = randDist * Math.sin(randAngle);
+        }
+        
+        let dist = Math.hypot(dust.x, dust.y);
+        if (dist < max*0.166) dust.color = '230, 230, 230'; // 0, 0.25, 0.5, 1
+        else if (dist < max*0.322) dust.color = '201, 136, 14';
+        else if (dist < max*0.5) dust.color = '230, 0, 0';
+        else dust.color = '180, 0, 0';
+
+        // clamping between max and min to get its gravity
+        dust.gravity = (1 - ((Math.hypot(dust.x, dust.y) - min) / (max - min))) / 10;
+        dust.baseGravity = dust.gravity;
+        return dust;
+    }
+
+    for (let i = 0; i < 750; i++) accretionDisk.push(createDust());
+    return accretionDisk;
+}
 
 function enemyAbilitiesAndStats(enemy) {
     num = Math.random();
