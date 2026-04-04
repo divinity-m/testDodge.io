@@ -22,6 +22,7 @@
                 overscroll-behavior: none; /* prevent edge bounce */
             }
             body {
+                position: relative;
                 display: flex;
                 justify-content: center; /* Center horizontally */
                 align-items: center; /* Center vertically */
@@ -56,6 +57,20 @@
                 left: -20px;
                 border-radius: 100%;
             }
+            .ability-div {
+                position: absolute;
+                width: 50px;
+                height: 50px;
+                top: 50%;
+            }
+            #ability-one {
+                left: 20%;
+                transform: translate(-50%, -50%);
+            }
+            #ability-two {
+                right: 20%;
+                transform: translate(-50%, 50%);
+            }
         </style>
     </head>
     <body id="bodyEl">        
@@ -76,6 +91,12 @@
 
         <!-- Canvas -->
         <canvas id="game"></canvas>
+
+        <!-- Abilities -->
+        <div id="ability-one" class="ability-div"></div>
+        <div id="ability-two" class="ability-div"></div>
+
+        <!-- Cursor -->
         <div id="cursor-trail"></div>
         <div id="cursor"></div>
         <div id="cursor-overlay"></div>
