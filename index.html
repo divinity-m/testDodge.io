@@ -7,10 +7,13 @@
         <title>Dodge.io</title>
         <link rel="icon" type="image/x-icon" href="DodgeImages/dodgeIcon.png" />
 
-        <!-- JAVASCRIPT -->
-        <script defer src="functions.js"></script>
-        <script defer src="music.js"></script>
-        <script defer src="script.js"></script>
+        <!-- Outfit Font-Family Link -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap"
+            rel="stylesheet"
+        />
 
         <!-- CSS -->
         <style>
@@ -58,13 +61,27 @@
                 border-radius: 100%;
             }
             .ability-div {
-                position: absolute;
                 width: 5rem;
                 height: 5rem;
+                
+                position: absolute;
+                top: 50%;
+                
                 background-color: rgb(255, 255, 255);
                 border: rgb(230, 230, 230) 5px solid;
                 border-radius: 15%;
-                top: 50%;
+                
+                color: rgb(230, 230, 230);
+                font-size: 1.1rem;
+                font-family: "Outfit";
+                font-weight: bold;
+                text-align: center;
+                white-space: nowrap;
+                user-select: none;
+
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
             #ability-one {
                 left: 10%;
@@ -97,10 +114,10 @@
 
         <!-- Abilities -->
         <div id="ability-one" class="ability-div">
-            <p></p>
+            <p>Ability 1</p>
         </div>
         <div id="ability-two" class="ability-div">
-            <p></p>
+            <p>Ability 2</p>
         </div>
 
         <!-- Cursor -->
@@ -108,5 +125,10 @@
         <div id="cursor"></div>
         <div id="cursor-overlay"></div>
         <div id="cursor-clicks"></div>
+
+        <!-- JAVASCRIPT -->
+        <script defer src="functions.js"></script>
+        <script defer src="music.js"></script>
+        <script defer src="script.js"></script>
     </body>
 </html>
