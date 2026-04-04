@@ -144,20 +144,38 @@ function recordLeftClick() {
         }
     }
     // mobile MM stays on for normal screen taps
-    else previousMM = mouseMovementOn;
+    else {
+        if (!settings.disableMM) mouseMovementOn = true;
+        else mouseMovementOn = false;
+
+        previousMM = mouseMovementOn;
+    }
     
     // Start screen buttons
     if (innerGameState === "mainMenu" && (mouseOver.play || mouseOver.selector)) {
         if (mouseOver.play) innerGameState = "selectDifficulty";
         else if (mouseOver.selector) innerGameState = "selectDodger";
+        
         resetBgVars();
+        mouseMovementOn = previousMM;
+    }
+
+    // Links
+    else if ((mouseOver.evades || mouseOver.jsab) && !isMobile()) {
+        const evadesAnchor = document.getElementById("evades-link");
+        const jsabAnchor = document.getElementById("jsab-link");
+        
+        if (mouseOver.evades) evadesAnchor.click();
+        if (mouseOver.jsab) jsabAnchor.click();
+        
         mouseMovementOn = previousMM;
     }
     
     // Gear button
-    else if (gameState === "startScreen" && innerGameState != "settings" && mouseOver.settings) {
+    else if (innerGameState !== "settings" && mouseOver.settings) {
         previousGameState = innerGameState;
         innerGameState = "settings";
+        
         resetBgVars();
         mouseMovementOn = previousMM;
     }
@@ -338,7 +356,7 @@ function detectHover() {
     mouseOver.evades = gameState === "startScreen" && innerGameState === "mainMenu" && mouseX > 485 && mouseX < 570 && mouseY > 11 && mouseY < 28;
     mouseOver.jsab = gameState === "startScreen" && innerGameState === "mainMenu" && mouseX > 612 && mouseX < 795 && mouseY > 11 && mouseY < 28;
 
-    let dodgerSelection = gameState === "startScreen" && innerGameState === "selectDodger";
+    const dodgerSelection = gameState === "startScreen" && innerGameState === "selectDodger";
     mouseOver.evader = dodgerSelection && mouseX > 50 && mouseX < 250 && mouseY > 25 && mouseY < 125;
     mouseOver.jolt = dodgerSelection && mouseX > 300 && mouseX < 500 && mouseY > 25 && mouseY < 125;
     mouseOver.jötunn = dodgerSelection && mouseX > 550 && mouseX < 750 && mouseY > 25 && mouseY < 125;
@@ -346,7 +364,7 @@ function detectHover() {
     mouseOver.j_sab = dodgerSelection && mouseX > 300 && mouseX < 500 && mouseY > 150 && mouseY < 250;
     mouseOver.quasar = dodgerSelection && mouseX > 550 && mouseX < 750 && mouseY > 150 && mouseY < 250;
 
-    let difficultySelection = gameState === "startScreen" && innerGameState === "selectDifficulty";
+    const difficultySelection = gameState === "startScreen" && innerGameState === "selectDifficulty";
     mouseOver.easy = difficultySelection && mouseX > 50 && mouseX < 250 && mouseY > 250 && mouseY < 350;
     mouseOver.medium = difficultySelection && mouseX > 300 && mouseX < 500 && mouseY > 250 && mouseY < 350;
     mouseOver.hard = difficultySelection && mouseX > 550 && mouseX < 750 && mouseY > 250 && mouseY < 350;
@@ -354,7 +372,7 @@ function detectHover() {
     mouseOver.andromeda = difficultySelection && mouseX > 300 && mouseX < 500 && mouseY > 450 && mouseY < 550;
     mouseOver.euphoria = difficultySelection && mouseX > 550 && mouseX < 750 && mouseY > 450 && mouseY < 550;
 
-    let settingsMenu = gameState === "startScreen" && innerGameState === "settings";
+    const settingsMenu = gameState === "startScreen" && innerGameState === "settings";
     mouseOver.enemyOutBtn = settingsMenu && mouseX > 216 && mouseX < 236 && mouseY > 35 && mouseY < 55;
     mouseOver.disableMMBtn = settingsMenu && mouseX > 318 && mouseX < 338 && mouseY > 85 && mouseY < 105;
     mouseOver.musicSlider = settingsMenu && mouseX >= 555 && mouseX <= 725 && mouseY >= 30 && mouseY <= 60;
