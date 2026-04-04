@@ -1,4 +1,4 @@
-console.log("mobile update");
+console.log("mobile update 2");
 
 // DODGE.IO - SCRIPT.JS
 const cnv = document.getElementById("game");
