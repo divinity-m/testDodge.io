@@ -1,54 +1,41 @@
-console.log("scale")
+console.log("finishing touches");
 
 // DODGE.IO - SCRIPT.JS
 const cnv = document.getElementById("game");
 const ctx = cnv.getContext('2d');
 
 // Game Units
-let gameState = "loading", innerGameState = "loading";
-const GAME_WIDTH = 800, GAME_HEIGHT = 650;
+let [gameState, innerGameState, previousGameState] = ["loading", "loading", "loading"];
+[cnv.width, cnv.height] = [800, 650];
+let [GAME_WIDTH, GAME_HEIGHT] = [800, 650];
 
 // Screen Orientations
-function resizeCnv() {
-    // Pick a scale factor based on window size
-    const scale = Math.min(window.innerWidth / GAME_WIDTH, window.innerHeight / GAME_HEIGHT);
-
-    // set the canvas drawing resolution
-    cnv.width = GAME_WIDTH * scale;
-    cnv.height = GAME_HEIGHT * scale;
-
-    // return the scale factor to draw()
-    return scale;
-}
-
-// Touchscreen Events
 function isMobile() {
   const uaCheck = /Mobi|Android/i.test(navigator.userAgent);
   const sizeCheck = window.matchMedia("(max-width: 768px)").matches;
   return uaCheck || sizeCheck;
 }
 
-document.addEventListener("touchend", () => { if (isMobile()) mouseDown = false });
-document.addEventListener("touchcancel", () => { if (isMobile()) mouseDown = false });
+function resize() {
+    if (isMobile()) cnv.style.width = `350px`;
+    else cnv.style.width = `${window.innerWidth * (GAME_WIDTH/1397)}px`;
+}
+window.addEventListener("resize", resize);
+screen?.orientation.addEventListener("change", resize);
+resize();
+
+// Keyboard and Mouse Variables
+let [lastPressing, keyboardMovementOn, mouseMovementOn, previousMM] = ["mouse", false, false, false];
+let [wPressed, aPressed, sPressed, dPressed, shiftPressed] = [false, false, false, false, 1];
+let [mouseDown, allClicks] = [false, []];
 
 // Keyboard Events
-let lastPressing = "mouse";
-let keyboardMovementOn = false;
-let wPressed = false;
-let aPressed = false;
-let sPressed = false;
-let dPressed = false;
-let shiftPressed = 1;
 document.addEventListener("keydown", recordKeyDown);
 document.addEventListener("keyup", recordKeyUp);
 
 // Mouse Events
-let mouseDown = false;
-let allClicks = [];
-let mouseMovementOn = false;
-let previousMM = false;
-document.addEventListener("mousedown", () => { if (!isMobile()) mouseDown = true });
-document.addEventListener("mouseup", () => { if (!isMobile()) mouseDown = false });
+document.addEventListener("mousedown", () => { if (!isMobile()) mouseDown = true; });
+document.addEventListener("mouseup", () => { if (!isMobile()) mouseDown = false; });
 document.addEventListener("click", () => {
     if (!isMobile()) { recordLeftClick(); allClicks.push(createClick("left")); }
 });
@@ -63,41 +50,66 @@ document.addEventListener("auxclick", (event) => {
     }
 });
 
+// Touchscreen Events
+document.addEventListener("touchend", () => { if (isMobile()) mouseDown = false; });
+document.addEventListener("touchcancel", () => { if (isMobile()) mouseDown = false; });
+
 // Input Tracking
 let mouseOver = {
-    play: false, settings: false, selector: false, restart: false,
+    play: false, settings: false, selector: false, restart: false, evades: false, jsab: false,
     
-    evader: false, j_sab: false, jötunn: false, jolt: false, crescendo: false,
+    evader: false, j_sab: false, jötunn: false, jolt: false, crescendo: false, quasar: false,
     
     easy: false, medium: false, hard: false, limbo: false, andromeda: false, euphoria: false,
     
     enemyOutBtn: false, disableMMBtn: false, musicSlider: false, sfxSlider: false,
     aZ_RangeBtn: false, aZ_AvSlider: false, customCursorBtn: false, cursorTrailSlider: false,
 };
-
 let mouseX, mouseY, cursorX, cursorY;
-let track = false;
-let allCursors = [];
-let lastCursorTrail = 0;
-let trailDensity = 0;
+let [track, allCursors, lastCursorTrail, trailDensity] = [false, [], 0, 0];
 
 function updateCursor(eventObject) {
-    // cursor location
+    // update cursor
     [cursorX, cursorY] = [eventObject.clientX, eventObject.clientY];
 
-    // offset mouse
+    // update mouse
     const rect = cnv.getBoundingClientRect();
-    [mouseX, mouseY] = [cursorX - rect.left, cursorY - rect.top];
+  
+    const scaleX = cnv.width / rect.width;
+    const scaleY = cnv.height / rect.height;
+  
+    mouseX = (cursorX - rect.left) * scaleX;
+    mouseY = (cursorY - rect.top) * scaleY;
 }
-
+function addCursorTrail() {
+    if (cursorX !== undefined && cursorY !== undefined && settings.customCursor && trailDensity > 0) {
+        // Trail Density
+        const pNow = performance.now();
+        if (pNow - lastCursorTrail > 16) { // ~60fps cap
+            allCursors.push(createCursor());
+            if (allCursors.length > 100) { // drop oldest
+                allCursors[0].div.remove();
+                allCursors.shift();
+            }
+            lastCursorTrail = pNow;
+        }
+    }
+}
+// cursor update event listeners
 document.addEventListener('mousemove', (event) => {
     updateCursor(event);
+    addCursorTrail();
     if (track) console.log(`x: ${mouseX.toFixed()} || y: ${mouseY.toFixed()}`);
 });
-document.addEventListener("touchmove", (event) => { updateCursor(event.touches[0]); });
-document.addEventListener("touchstart", () => {
+document.addEventListener("touchmove", (event) => {
     updateCursor(event.touches[0]);
-    if (isMobile()) { mouseDown = true; recordLeftClick(); }
+    mouseDown = true;
+    addCursorTrail();
+});
+document.addEventListener("touchstart", (event) => {
+    updateCursor(event.touches[0]);
+    if (isMobile()) {recordLeftClick(); allClicks.push(createClick("left")); }
+    if (track) console.log(`x: ${mouseX.toFixed()} || y: ${mouseY.toFixed()}`);
 });
 
 // Player & Enemies
@@ -107,6 +119,8 @@ let player = {
     dodger: "evader", color: "rgb(255, 255, 255)", subColor: "rgb(230, 230, 230)",
     facingAngle: 0, invincible: false,
 };
+
+let [allEnemies, allDangers] = [[], []];
 
 let settings = {
     enemyOutlines: true, disableMM: false,
@@ -126,49 +140,50 @@ let absoluteZero = {
     passive: "Absolute Zero",
     slowStart: 273.15, slowEnd: 75,
     lastEnded: 0,
-}
+};
 
 let shockwave = {
     usable: true, active: "Shockwave", used: "Shockwave", activated: false,
     radius: 25, path: new Path2D(),
     lastEnded: 0, cd: 7000, effect: 0.75,
     reset: function () {
-        this.lastEnded = 0;
-        this.activated = false;
-        this.radius = 25;
-    }
+        [this.lastEnded, this.activated, this.radius] = [0, false, 25];
+    },
 };
 
 let amplify = {
     baseSpeed: 5, speed: 0, accel: 0, limit: 10.5, accelRate: Date.now(),
     reset: function () {
-        player.baseSpeed = 5;
-        this.speed = 0;
-        this.accel = 0;
-        this.accelRate = Date.now();
+        [player.baseSpeed, this.speed, this.accel, this.accelRate] = [5, 0, 0, Date.now()];
     },
+};
+
+let eventHorizon = {
+    usable: true, activated: false,
+    av: 0, accretionDisk: [],
+    lastUsed: 0, lastEnded: 0,
+    reset: function() {
+        player.baseSpeed = 5;
+        if (player.dodger === "quasar") [player.color, player.subColor] = ["rgb(255, 165, 0)", "rgb(230, 153, 11)"];
+        [this.av, this.accretionDisk, this.activated, this.lastUsed, this.lastEnded] = [0, [], false, 0, 0];
+    }
 }
 
-let allEnemies = [], allDangers = [];
-
 // Time, Highscore, and Difficulty
-let now = Date.now();
-let clickEventSave = 0;
-
-let loadingGame = Date.now(), loadingTextChange = Date.now();
+let [now, loadingGame, loadingTextChange, startTime, lastSpawn] = [Date.now(), Date.now(), Date.now(), Date.now(), Date.now()];
+let enemySpawnPeriod = 3000;
+let currentTime = ((now-startTime) / 1000).toFixed(2);
+let timeLeft;
 let LI = 0; // loading index
 let endLoading = false;
-
-let startTime = Date.now(), currentTime = ((now-startTime) / 1000).toFixed(2), timeLeft;
-
-let enemySpawnPeriod = 3000, lastSpawn = Date.now();
+let clickEventSave = 0; // prevents spam saving when clicking something that saves the game as a side-effect
 
 let highscoreColor = "rgb(87, 87, 87)";
 let highscore = { easy: 0, medium: 0, hard: 0, limbo: 0, andromeda: 0, euphoria: 0, };
 let difficulty = { level: "easy", color: "rgb(0, 225, 255)", };
 
 // Music
-let musicVolume = 0, sfxVolume = 0;
+let [musicVolume, sfxVolume] = [0, 0];
 
 let alarm9 = document.getElementById("alarm9");
 let music = {
@@ -184,7 +199,7 @@ let sharpPop = document.getElementById("sharp-pop");
 
 // User Data
 let lastSave = 0; // tracks how often data is saved (during gameplay)
-const localData = localStorage.getItem('localUserData'); // load savedData (if it exists)
+const localData = localStorage.getItem('localDodgeData'); // load savedData (if it exists)
 let userData;
 let resetLocalData = false;
 
@@ -194,7 +209,7 @@ if (localData) {
         userData = JSON.parse(localData);       
     } catch (exception) {
         console.warn('Local user data was invalid, resetting.', exception);
-        localStorage.removeItem('localUserData');
+        localStorage.removeItem('localDodgeData');
         resetLocalData = true;
     }
 
@@ -208,10 +223,12 @@ if (localData) {
         ["dodger", "color", "subColor", "invincible"].forEach(attribute => {
             if (userData?.player?.[attribute] !== undefined) p[attribute] = userData.player[attribute];
         })
+        
         let hs = {easy: 0, medium: 0, hard: 0, limbo: 0, andromeda: 0, euphoria: 0};
         ["easy", "medium", "hard", "limbo", "andromeda", "euphoria"].forEach(score => {
             if (userData?.highscore?.[score] !== undefined) hs[score] = userData.highscore[score];
         })
+        
         let s = {enemyOutlines: true, disableMM: false, musicSliderX: 640, sfxSliderX: 627, aZ_Range: true, aZ_Av: 650, customCursor: true, cursorTrail: 715};
         ["enemyOutlines", "disableMM", "musicSliderX", "sfxSliderX", "aZ_Range", "aZ_Av", "customCursor", "cursorTrail"].forEach(setting => {
             if (userData?.settings?.[setting] !== undefined) s[setting] = userData.settings[setting];
@@ -225,6 +242,8 @@ if (localData) {
                               aZ_Range: s.aZ_Range, aZ_Av: s.aZ_Av, customCursor: s.customCursor, cursorTrail: s.cursorTrail}};
         // updates the current data to the locally saved data
         player = userData.player;
+        if (player.dodger === "j-sab") { player.color = "rgb(255, 0, 0)"; player.subColor = "rgb(230, 0, 0)"; }
+        if (player.dodger === "quasar") { player.color = "rgb(255, 165, 0)"; player.subColor = "rgb(230, 153, 11)"; }
         highscore = userData.highscore;
         settings = userData.settings;
         musicVolume = Math.max(Math.min((settings.musicSliderX - 565) / (715 - 565), 1), 0);
@@ -241,14 +260,15 @@ if (resetLocalData || !localData){
     userData = { player: player, highscore: highscore, settings: settings, };
     
     // saves the new user data to local storage
-    localStorage.setItem('localUserData', JSON.stringify(userData));
+    localStorage.setItem('localDodgeData', JSON.stringify(userData));
 }
 
 // saves the game if the website is closed
 window.addEventListener('beforeunload', () => {
     if (gameState !== "loading") { // only save user data if they're not on the loading screen
+        // Dash and Blackhole causes bugs when the player leaves mid-usage
         userData = { player: player, highscore: highscore, settings: settings, };
-        localStorage.setItem('localUserData', JSON.stringify(userData));
+        localStorage.setItem('localDodgeData', JSON.stringify(userData));
     }
 })
 
@@ -257,9 +277,9 @@ let bgTopText, bgBottomText, bgTopX, bgBottomX, bgTopMax, bgBottomMax;
 function resetBgVars() {
     const hyp = Math.hypot(GAME_WIDTH, GAME_HEIGHT);
     if (innerGameState === "mainMenu") {
-        [bgTopText, bgBottomText] = ["MAIN", "MENU"];
-        [bgTopX, bgBottomX] = [-500, GAME_WIDTH+500];
-        [bgTopMax, bgBottomMax] = [hyp*4/10, hyp*6/10];
+        [bgTopText, bgBottomText] = ["DODGE.IO", "HIT PLAY"];
+        [bgTopX, bgBottomX] = [-1000, GAME_WIDTH+1000];
+        [bgTopMax, bgBottomMax] = [hyp*5/10, hyp*5/10];
     }
     if (innerGameState === "selectDifficulty") {
         [bgTopText, bgBottomText] = ["LEVEL", "SELECTION"];
@@ -282,10 +302,7 @@ function resetBgVars() {
 function draw() {
     now = Date.now();
     detectHover();
-    const scale = resizeCnv();
-    ctx.save();
-    ctx.scale(scale, scale);
-    
+  
     ctx.fillStyle = "rgb(185, 185, 185)";
     ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
@@ -335,12 +352,13 @@ function draw() {
     // Actual Game
     if (gameState === "startScreen") {
         loopAudio();
-        abilities();
         drawText();
+      
         drawStartScreen();
-        
         if (innerGameState === "selectDifficulty") drawDifficultySelection();
         if (innerGameState === "selectDodger") drawDodgerSelection();
+      
+        abilities();
         drawPlayer();
         drawSettings();
         
@@ -350,37 +368,37 @@ function draw() {
     else if (gameState === "endlessMode") {
         loopAudio();
         drawText();
-        drawPlayer();
         drawEnemies();
+        abilities();
+        drawPlayer();
         
         keyboardControls();
         mouseMovement();
             
         spawnEnemyPeriodically();
         moveEnemies();
-        abilities();
         collisions();
     }
     else if (gameState === "endlessOver") {
         drawText();
         drawGameOver();
-        drawPlayer();
         drawEnemies();
         abilities();
+        drawPlayer();
     }
     else if (gameState === "musicMode") {
         drawEndLevel();
         spawnAndDrawDanger();
         drawText();
+
+        abilities();
         drawPlayer();
         
         keyboardControls();
         mouseMovement();
 
-        abilities();
         musicCollisions();
     }
-    ctx.restore();
 
     // CURSOR STUFF
     let cursorEl = document.getElementById("cursor");
@@ -389,68 +407,74 @@ function draw() {
     let playerColor = player.color.slice(4, player.color.length-1);
     let playerSubColor = player.subColor.slice(4, player.subColor.length-1);
 
-    allCursors.forEach(c => { if (c.av <= 0 || trailDensity <= 0) c.div.remove(); })
-    allClicks.forEach(c => {
-        if (c.av <= 0) {
-            c.div.remove();
-            if (c?.divMid) c?.divMid.remove();
+    // filters trails and clicks divs
+    allCursors.forEach(trail => { if (trail.av <= 0 || trailDensity <= 0) trail.div.remove(); })
+    allClicks.forEach(click => {
+        if (click.av <= 0) {
+            click.div.remove();
+            if (click?.divMid) click?.divMid.remove(); // need to acocunt for middle click
         }
     })
-    
+
+    // filters trails and clicks from array
     allCursors = allCursors.filter(c => c.av > 0 && trailDensity > 0); // removes trails with low av's
     allClicks = allClicks.filter(c => c.av > 0); // removes clicks with low av's
   
     // Makes default cursor invisible
-    if (settings.customCursor) {
+    if (settings.customCursor && !isMobile()) {
         document.documentElement.classList.add("no-cursor");
         cursorEl.style.display = "block";
         overlayEl.style.display = "block";
-    }
-    else {
+    } else {
         document.documentElement.classList.remove("no-cursor");
-        allCursors = [];
         cursorEl.style.display = "none";
         overlayEl.style.display = "none";
     }
     
   
     // Cursor & Cursor Trail
-    if (settings?.customCursor && cursorX !== undefined && cursorY !== undefined) {
-        if (trailDensity > 0) {
-            const pNow = performance.now();
-            if (pNow - lastCursorTrail > 16) { // ~60fps cap
-                allCursors.push(createCursor());
-                if (allCursors.length > 100) { // drop oldest
-                    allCursors[0].div.remove();
-                    allCursors.shift();
-                }
-                lastCursorTrail = pNow;
-            }
-        }
-      
-        allCursors.forEach(cursor => {
-            cursor.div.style.backgroundColor = cursor.color;
-            cursor.div.style.top = `${cursor.y-cursor.r}px`;
-            cursor.div.style.left = `${cursor.x-cursor.r}px`;
-            cursor.div.style.width = `${cursor.r*2}px`;
-            cursor.div.style.height = `${cursor.r*2}px`;
-            
-            cursor.r -= cursor.subR;
-            cursor.av -= cursor.subAv;
-        })
+    if (cursorX !== undefined && cursorY !== undefined) {
+        // Draws Trail
+        allCursors.forEach(trail => {
+            // draws trails dimensions and color
+            trail.div.style.width = `${trail.r*2}px`;
+            trail.div.style.height = `${trail.r*2}px`;
+            trail.div.style.backgroundColor = trail.color;
 
+            // places trail
+            trail.div.style.transform = "translate(-50%, -50%)";
+            trail.div.style.top = `${trail.y}px`;
+            trail.div.style.left = `${trail.x}px`;
+
+            // changes trails radius and alpha value to animate it
+            trail.r -= trail.subR;
+            trail.av -= trail.subAv;
+        })
+    
+        // Draws Cursor
+        cursorEl.style.width = `${window.innerWidth * (12/1397)}px`;
+        cursorEl.style.height = `${window.innerWidth * (12/1397)}px`;
+        cursorEl.style.borderWidth = `${window.innerWidth * (3/1397)}px`;
+        
+        overlayEl.style.width = `${window.innerWidth * (12/1397)}px`;
+        overlayEl.style.height = `${window.innerWidth * (12/1397)}px`;
+        overlayEl.style.borderWidth = `${window.innerWidth * (3/1397)}px`;
+        
+        // Handles hoverings
         let hovering = false;
-        // Canvas Buttons
+        
+        // covers hovering over canvas buttons
         Object.keys(mouseOver).forEach(hover => {
           if (mouseOver[hover]) hovering = true;
         })
-        // Document Hyperlinks
+        
+        // covers hovering over hyperlinks
         let hyperlinks = document.getElementsByTagName('a');
         for (let i = 0; i < hyperlinks.length; i++) {
           if (hyperlinks[i].matches(":hover")) hovering = true;
         }
         
-        // hoving inverts cursor colors, clicking reduces alpha value
+        // hovering inverts cursor colors
         if (hovering) {
             cursorEl.style.backgroundColor = player.subColor;
             cursorEl.style.borderColor = player.color;
@@ -461,11 +485,14 @@ function draw() {
 
         // clicking brightens the cursor with an overlay
         if (mouseDown) {
-            let bg = overlayEl.style.backgroundColor;
-            bg = "rgba(255, 255, 255, 0.5)";
-            if (player.dodger === "jötunn") bg = "rgba(255, 255, 255, 0.3)";
-            if (player.dodger === "crescendo") bg = "rgba(255, 255, 255, 0.3)";
-            overlayEl.style.borderColor = bg;
+            let av = 0.25; // alpha value
+            if (player.dodger === "jötunn") av = 0.05;
+            if (player.dodger === "crescendo") av = 0.1;
+            if (player.dodger === "j-sab") av = 0.1;
+
+            if (hovering) av *= 1.2;
+            overlayEl.style.backgroundColor = `rgba(255, 255, 255, ${av})`;
+            overlayEl.style.borderColor = `rgba(255, 255, 255, ${av})`;
         }
         else {
             overlayEl.style.backgroundColor = "rgba(255, 255, 255, 0)";
@@ -473,16 +500,19 @@ function draw() {
         }
         
         // update cursor position
-        cursorEl.style.top = `${cursorY-8.5}px`;
-        cursorEl.style.left = `${cursorX-8.5}px`;
-        overlayEl.style.top = `${cursorY-8.5}px`;
-        overlayEl.style.left = `${cursorX-8.5}px`;
+        cursorEl.style.transform = "translate(-50%, -50%)";
+        cursorEl.style.top = `${cursorY}px`;
+        cursorEl.style.left = `${cursorX}px`;
+
+        // update overlay position
+        overlayEl.style.transform = "translate(-50%, -50%)";
+        overlayEl.style.top = cursorEl.style.top;
+        overlayEl.style.left = cursorEl.style.left;
     }
       
     // Click Animation
     allClicks.forEach(click => {
-        click.div.style.top = `${click.y-click.r*1.05}px`;
-        click.div.style.left = `${click.x-click.r*1.05}px`;
+        // draws clicks dimensions and color
         click.div.style.width = `${click.r*2}px`;
         click.div.style.height = `${click.r*2}px`;
         click.div.style.border = "2px solid";
@@ -490,19 +520,28 @@ function draw() {
         click.div.style.backgroundColor = "rgba(0, 0, 0, 0)";
         if (click.button === "left" || click.button === "middle") click.div.style.borderColor = click.colorLeft;
         if (click.button === "right") click.div.style.borderColor = click.colorRight;
+
+        // places click
+        click.div.style.transform = "translate(-50%, -50%)";
+        click.div.style.top = `${click.y}px`;
+        click.div.style.left = `${click.x}px`;
         
+        // determines middle clicks dimensions, color, and placement
         if (click.button === "middle") {
             click.divMid.style.backgroundColor = "rgba(0, 0, 0, 0)";
             let newR = click.r-3;
             if (newR > 0) {
-                click.divMid.style.top = `${click.y-newR*1.05}px`;
-                click.divMid.style.left = `${click.x-newR*1.05}px`;
                 click.divMid.style.width = `${newR*2}px`;
                 click.divMid.style.height = `${newR*2}px`;
                 click.divMid.style.border = `2px solid ${click.colorRight}`;
+
+                click.divMid.style.transform = "translate(-50%, -50%)";
+                click.divMid.style.top = `${click.y}px`;
+                click.divMid.style.left = `${click.x}px`;
             }
         }
 
+        // changes clicks radius and alpha value to animate it
         click.r += click.addR;
         click.av -= click.subAv;
     })
