@@ -1,4 +1,4 @@
-console.log("jolt 2");
+console.log("jolt 3");
 
 // DODGE.IO - SCRIPT.JS
 const cnv = document.getElementById("game");
@@ -202,20 +202,17 @@ let eventHorizon = {
 const abilityOneBtn = document.getElementById("ability-one");
 const abilityTwoBtn = document.getElementById("ability-two");
 
-const upEvents = ["touchend", "click"];
-upEvents.forEach((upEvent) => {
-    abilityOneBtn.addEventListener(upEvent, () => {
-        recordRightClick();
-        allClicks.push(createClick("right"));
-        colorAbilityButtons(abilityOneBtn);
-    });
+abilityOneBtn.addEventListener("click", () => {
+    recordRightClick();
+    allClicks.push(createClick("right"));
+    colorAbilityButtons(abilityOneBtn);
+});
                                    
-    abilityTwoBtn.addEventListener(upEvent, () => {
-        recordMiddleClick();
-        allClicks.push(createClick("middle"));
-        colorAbilityButtons(abilityTwoBtn);
-    });
-})
+abilityTwoBtn.addEventListener("click", () => {
+    recordMiddleClick();
+    allClicks.push(createClick("middle"));
+    colorAbilityButtons(abilityTwoBtn);
+});
 
 /* Ability Button hover and click effects */
 window.addEventListener("load", () => {
