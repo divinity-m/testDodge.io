@@ -24,6 +24,13 @@ window.addEventListener("resize", resize);
 screen?.orientation.addEventListener("change", resize);
 resize();
 
+// window.addEventListener("touchstart", () => {
+//     if (isMobile() && !document.fullscreenElement) {
+//         // full screen stuff
+//         document.documentElement.requestFullscreen();
+//     }
+// })
+
 // Keyboard and Mouse Variables
 let [lastPressing, keyboardMovementOn, mouseMovementOn, previousMM] = ["mouse", false, false, false];
 let [wPressed, aPressed, sPressed, dPressed, shiftPressed] = [false, false, false, false, 1];
