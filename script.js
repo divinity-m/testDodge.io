@@ -1,4 +1,4 @@
-console.log("jolt bugged");
+console.log("jolt 2");
 
 // DODGE.IO - SCRIPT.JS
 const cnv = document.getElementById("game");
@@ -207,11 +207,13 @@ upEvents.forEach((upEvent) => {
     abilityOneBtn.addEventListener(upEvent, () => {
         recordRightClick();
         allClicks.push(createClick("right"));
-    }
+        colorAbilityButtons(abilityOneBtn);
+    });
                                    
     abilityTwoBtn.addEventListener(upEvent, () => {
         recordMiddleClick();
         allClicks.push(createClick("middle"));
+        colorAbilityButtons(abilityTwoBtn);
     });
 })
 
@@ -244,12 +246,6 @@ window.addEventListener("load", () => {
                     abilityBtn.style.backgroundColor = player.subColor;
                     abilityBtn.style.borderColor = player.color;
                     abilityBtn.style.color = player.color;
-                });
-            })
-            
-            upEvents.forEach((upEvent) => {
-                abilityBtn.addEventListener(upEvent, () => {
-                    colorAbilityButtons(abilityBtn);
                 });
             })
         }
