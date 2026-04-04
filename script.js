@@ -1,4 +1,4 @@
-console.log("finishing touches");
+console.log("mobile update");
 
 // DODGE.IO - SCRIPT.JS
 const cnv = document.getElementById("game");
@@ -35,7 +35,7 @@ resize();
 
 
 // Keyboard and Mouse Variables & Events 
-let [lastPressing, keyboardMovementOn, mouseMovementOn, previousMM] = ["mouse", false, false, false];
+let [lastPressing, keyboardMovementOn, mouseMovementOn] = ["mouse", false, false];
 let [wPressed, aPressed, sPressed, dPressed, shiftPressed] = [false, false, false, false, 1];
 let [mouseDown, allClicks] = [false, []];
 
@@ -62,7 +62,10 @@ document.addEventListener("auxclick", (event) => {
 
 /* Touchscreen Events */
 document.addEventListener("touchend", () => {
-    recordLeftClick();
+    const mouseInAbilityBtn = abilityOneBtn.contains(event.target) || abilityTwoBtn.contains(event.target);
+    if (!mouseInAbilityBtn) {
+        recordLeftClick();
+    }
     allClicks.push(createClick("left"));
     mouseDown = false;
 });
@@ -116,9 +119,11 @@ function addCursorTrail() {
 
 /* cursor update event listeners */
 document.addEventListener('mousemove', (event) => {
-    updateCursor(event);
-    addCursorTrail();
-    if (track) console.log(`x: ${mouseX.toFixed()} || y: ${mouseY.toFixed()}`);
+    if (!isMobile()) {
+        updateCursor(event);
+        addCursorTrail();
+        if (track) console.log(`x: ${mouseX.toFixed()} || y: ${mouseY.toFixed()}`);
+    }
 });
 document.addEventListener("touchmove", (event) => {
     mouseDown = true;
@@ -127,8 +132,11 @@ document.addEventListener("touchmove", (event) => {
 });
 document.addEventListener("touchstart", (event) => {
     mouseDown = true;
-    updateCursor(event.touches[0]);
-    if (track) console.log(`x: ${mouseX.toFixed()} || y: ${mouseY.toFixed()}`);
+
+    const mouseInAbilityBtn = abilityOneBtn.contains(event.target) || abilityTwoBtn.contains(event.target);
+    if (!mouseInAbilityBtn) {
+        updateCursor(event.touches[0]);
+    }
 });
 
 
@@ -203,10 +211,25 @@ upEvents.forEach((upEvent) => {
 window.addEventListener("load", () => {
     [abilityOneBtn, abilityTwoBtn].forEach((abilityBtn) => {
         if (abilityBtn) {
-            ["touchmove", "mousemove"].forEach((moveEvent) => {
+            const moveEvents = ["touchmove", "mousemove"];
+            moveEvents.forEach((moveEvent) => {
                 document.addEventListener(moveEvent, (e) => {
-                    if (abilityBtn.contains(e.target)) abilityBtn.style.opacity = 0.7
-                    else abilityBtn.style.opacity = 1
+                    if (abilityBtn.contains(e.target)) {
+                        abilityBtn.style.opacity = 0.7;
+                        
+                        if (mouseDown) {
+                            abilityBtn.style.backgroundColor = player.subColor;
+                            abilityBtn.style.borderColor = player.color;
+                            abilityBtn.style.color = player.color;
+                        }
+                    }
+                    else {
+                        abilityBtn.style.opacity = 1;
+                        
+                        abilityBtn.style.backgroundColor = player.color;
+                        abilityBtn.style.borderColor = player.subColor;
+                        abilityBtn.style.color = player.subColor;
+                    }
                 });
             })
             
@@ -530,18 +553,18 @@ function draw() {
         overlayEl.style.height = `${window.innerWidth * (12/1397)}px`;
         overlayEl.style.borderWidth = `${window.innerWidth * (3/1397)}px`;
         
-        // Handles hoverings
+        // Handles hovers
         let hovering = false;
         
         // covers hovering over canvas buttons
         Object.keys(mouseOver).forEach(hover => {
-          if (mouseOver[hover]) hovering = true;
+            if (mouseOver[hover]) hovering = true;
         })
         
-        // covers hovering over hyperlinks
+        // handles hovering over hyperlinks
         let hyperlinks = document.getElementsByTagName('a');
         for (let i = 0; i < hyperlinks.length; i++) {
-          if (hyperlinks[i].matches(":hover")) hovering = true;
+            if (hyperlinks[i].matches(":hover")) hovering = true;
         }
         
         // hovering inverts cursor colors
