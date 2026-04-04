@@ -1,4 +1,4 @@
-console.log("mobile update 2");
+console.log("full screen");
 
 // DODGE.IO - SCRIPT.JS
 const cnv = document.getElementById("game");
@@ -26,12 +26,13 @@ window.addEventListener("resize", resize);
 screen?.orientation.addEventListener("change", resize);
 resize();
 
-// window.addEventListener("touchstart", () => {
-//     if (isMobile() && !document.fullscreenElement) {
-//         // full screen stuff
-//         document.documentElement.requestFullscreen();
-//     }
-// })
+// Full Screen Stuff
+window.addEventListener("touchstart", () => {
+    if (isMobile() && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        resize();
+    }
+})
 
 
 // Keyboard and Mouse Variables & Events 
