@@ -27,7 +27,7 @@ screen?.orientation.addEventListener("change", resize);
 resize();
 
 /* Full Screen Stuff */
-window.addEventListener("touchstart", () => {
+document.addEventListener("touchstart", () => {
     if (isMobile() && !document.fullscreenElement) {
         document.documentElement.requestFullscreen();
         resize();
@@ -206,22 +206,43 @@ abilityOneBtn.addEventListener("click", () => {
     recordRightClick();
     allClicks.push(createClick("right"));
     colorAbilityButtons(abilityOneBtn);
+    abilityOneBtn.style.opacity = 1;
 });
                                    
 abilityTwoBtn.addEventListener("click", () => {
     recordMiddleClick();
     allClicks.push(createClick("middle"));
     colorAbilityButtons(abilityTwoBtn);
+    abilityTwoBtn.style.opacity = 1;
 });
 
 /* Ability Button hover and click effects */
 window.addEventListener("load", () => {
     [abilityOneBtn, abilityTwoBtn].forEach((abilityBtn) => {
         if (abilityBtn) {
-            const moveEvents = ["touchmove", "mousemove"];
-            moveEvents.forEach((moveEvent) => {
-                document.addEventListener(moveEvent, (e) => {
+            if (!isMobile()) {
+                document.addEventListener("mousemove", (e) => {
                     if (abilityBtn.contains(e.target)) {
+                        abilityBtn.style.opacity = 0.7;
+                            
+                        if (mouseDown) {
+                            abilityBtn.style.backgroundColor = player.subColor;
+                            abilityBtn.style.borderColor = player.color;
+                            abilityBtn.style.color = player.color;
+                        }
+                    }
+                    else {
+                        abilityBtn.style.opacity = 1;
+                        colorAbilityButtons(abilityBtn);
+                    }
+                });
+            }
+            else {
+                document.addEventListener("touchmove", (e) => {
+                    const touch = e.changedTouches[0];
+                    let elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
+                    
+                    if (abilityBtn.contains(elementUnderFinger)) {
                         abilityBtn.style.opacity = 0.7;
                         
                         if (mouseDown) {
@@ -235,7 +256,8 @@ window.addEventListener("load", () => {
                         colorAbilityButtons(abilityBtn);
                     }
                 });
-            })
+            }
+            
             
             const downEvents = ["touchstart", "mousedown"];
             downEvents.forEach((downEvent) => {
