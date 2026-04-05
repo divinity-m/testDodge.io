@@ -1,4 +1,4 @@
-console.log("jolt 3");
+console.log("jolt 4");
 
 // DODGE.IO - SCRIPT.JS
 const cnv = document.getElementById("game");
